@@ -67,8 +67,11 @@ namespace Exiv2 {
     class EXIV2API BasicIo {
     public:
         //! BasicIo auto_ptr type
+#ifdef EXV_USING_CPP_ELEVEN
+        typedef std::unique_ptr<BasicIo> AutoPtr;
+#else
         typedef std::auto_ptr<BasicIo> AutoPtr;
-
+#endif
         //! Seek starting positions
         enum Position { beg, cur, end };
 

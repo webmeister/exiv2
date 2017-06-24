@@ -152,7 +152,11 @@ namespace Exiv2 {
     Image::Image(int              imageType,
                  uint16_t         supportedMetadata,
                  BasicIo::AutoPtr io)
+#ifdef EXV_USING_CPP_ELEVEN
+        : io_(std::move(io)),
+#else
         : io_(io),
+#endif
           pixelWidth_(0),
           pixelHeight_(0),
           imageType_(imageType),
@@ -862,7 +866,11 @@ namespace Exiv2 {
     Image::AutoPtr ImageFactory::open(const byte* data, long size)
     {
         BasicIo::AutoPtr io(new MemIo(data, size));
+#ifdef EXV_USING_CPP_ELEVEN
+        Image::AutoPtr image = open(std::move(io)); // may throw
+#else
         Image::AutoPtr image = open(io); // may throw
+#endif
         if (image.get() == 0) throw Error(12);
         return image;
     }
@@ -874,7 +882,11 @@ namespace Exiv2 {
         }
         for (unsigned int i = 0; registry[i].imageType_ != ImageType::none; ++i) {
             if (registry[i].isThisType_(*io, false)) {
+#ifdef EXV_USING_CPP_ELEVEN
+                return registry[i].newInstance_(std::move(io), false);
+#else
                 return registry[i].newInstance_(io, false);
+#endif
             }
         }
         return Image::AutoPtr();
@@ -883,14 +895,23 @@ namespace Exiv2 {
     Image::AutoPtr ImageFactory::create(int type,
                                         const std::string& path)
     {
+#ifdef EXV_USING_CPP_ELEVEN
+        std::unique_ptr<FileIo> fileIo(new FileIo(path));
+#else
         std::auto_ptr<FileIo> fileIo(new FileIo(path));
+#endif
         // Create or overwrite the file, then close it
         if (fileIo->open("w+b") != 0) {
             throw Error(10, path, "w+b", strError());
         }
         fileIo->close();
+#ifdef EXV_USING_CPP_ELEVEN
+        BasicIo::AutoPtr io(std::move(fileIo));
+        Image::AutoPtr image = create(type, std::move(io));
+#else
         BasicIo::AutoPtr io(fileIo);
         Image::AutoPtr image = create(type, io);
+#endif
         if (image.get() == 0) throw Error(13, type);
         return image;
     }
@@ -899,14 +920,23 @@ namespace Exiv2 {
     Image::AutoPtr ImageFactory::create(int type,
                                         const std::wstring& wpath)
     {
+#ifdef EXV_USING_CPP_ELEVEN
+        std::unique_ptr<FileIo> fileIo(new FileIo(wpath));
+#else
         std::auto_ptr<FileIo> fileIo(new FileIo(wpath));
+#endif
         // Create or overwrite the file, then close it
         if (fileIo->open("w+b") != 0) {
             throw WError(10, wpath, "w+b", strError().c_str());
         }
         fileIo->close();
+#ifdef EXV_USING_CPP_ELEVEN
+        BasicIo::AutoPtr io(std::move(fileIo));
+        Image::AutoPtr image = create(type, std::move(io));
+#else
         BasicIo::AutoPtr io(fileIo);
         Image::AutoPtr image = create(type, io);
+#endif
         if (image.get() == 0) throw Error(13, type);
         return image;
     }
@@ -915,7 +945,11 @@ namespace Exiv2 {
     Image::AutoPtr ImageFactory::create(int type)
     {
         BasicIo::AutoPtr io(new MemIo);
+#ifdef EXV_USING_CPP_ELEVEN
+        Image::AutoPtr image = create(type, std::move(io));
+#else
         Image::AutoPtr image = create(type, io);
+#endif
         if (image.get() == 0) throw Error(13, type);
         return image;
     }
@@ -926,7 +960,11 @@ namespace Exiv2 {
         // BasicIo instance does not need to be open
         const Registry* r = find(registry, type);
         if (0 != r) {
+#ifdef EXV_USING_CPP_ELEVEN
+            return r->newInstance_(std::move(io), true);
+#else
             return r->newInstance_(io, true);
+#endif
         }
         return Image::AutoPtr();
     } // ImageFactory::create

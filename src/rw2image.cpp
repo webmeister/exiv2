@@ -52,8 +52,13 @@ namespace Exiv2 {
 
     using namespace Internal;
 
+#ifdef EXV_USING_CPP_ELEVEN
+    Rw2Image::Rw2Image(BasicIo::AutoPtr io)
+        : Image(ImageType::rw2, mdExif | mdIptc | mdXmp, std::move(io))
+#else
     Rw2Image::Rw2Image(BasicIo::AutoPtr io)
         : Image(ImageType::rw2, mdExif | mdIptc | mdXmp, io)
+#endif
     {
     } // Rw2Image::Rw2Image
 
@@ -253,7 +258,11 @@ namespace Exiv2 {
     // free functions
     Image::AutoPtr newRw2Instance(BasicIo::AutoPtr io, bool /*create*/)
     {
+#ifdef EXV_USING_CPP_ELEVEN
+        Image::AutoPtr image(new Rw2Image(std::move(io)));
+#else
         Image::AutoPtr image(new Rw2Image(io));
+#endif
         if (!image->good()) {
             image.reset();
         }

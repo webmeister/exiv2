@@ -82,8 +82,13 @@ namespace Exiv2 {
 
     using namespace Internal;
 
+#ifdef EXV_USING_CPP_ELEVEN
+    CrwImage::CrwImage(BasicIo::AutoPtr io, bool /*create*/)
+        : Image(ImageType::crw, mdExif | mdComment, std::move(io))
+#else
     CrwImage::CrwImage(BasicIo::AutoPtr io, bool /*create*/)
         : Image(ImageType::crw, mdExif | mdComment, io)
+#endif
     {
     } // CrwImage::CrwImage
 
@@ -222,7 +227,11 @@ namespace Exiv2 {
     // free functions
     Image::AutoPtr newCrwInstance(BasicIo::AutoPtr io, bool create)
     {
+#ifdef EXV_USING_CPP_ELEVEN
+        Image::AutoPtr image(new CrwImage(std::move(io), create));
+#else
         Image::AutoPtr image(new CrwImage(io, create));
+#endif
         if (!image->good()) {
             image.reset();
         }
@@ -360,7 +369,11 @@ namespace Exiv2 {
 
     void CiffComponent::add(AutoPtr component)
     {
+#ifdef EXV_USING_CPP_ELEVEN
+        doAdd(std::move(component));
+#else
         doAdd(component);
+#endif
     }
 
     void CiffEntry::doAdd(AutoPtr /*component*/)
@@ -476,7 +489,11 @@ namespace Exiv2 {
             }
             m->setDir(this->tag());
             m->read(pData, size, o, byteOrder);
+#ifdef EXV_USING_CPP_ELEVEN
+            add(std::move(m));
+#else
             add(m);
+#endif
             o += 10;
         }
     }  // CiffDirectory::readDirectory
@@ -848,7 +865,11 @@ namespace Exiv2 {
                 // Directory doesn't exist yet, add it
                 m_ = AutoPtr(new CiffDirectory(csd.crwDir_, csd.parent_));
                 cc_ = m_.get();
+#ifdef EXV_USING_CPP_ELEVEN
+                add(std::move(m_));
+#else
                 add(m_);
+#endif
             }
             // Recursive call to next lower level directory
             cc_ = cc_->add(crwDirs, crwTagId);
@@ -865,7 +886,11 @@ namespace Exiv2 {
                 // Tag doesn't exist yet, add it
                 m_ = AutoPtr(new CiffEntry(crwTagId, tag()));
                 cc_ = m_.get();
+#ifdef EXV_USING_CPP_ELEVEN
+                add(std::move(m_));
+#else
                 add(m_);
+#endif
             }
         }
         return cc_;

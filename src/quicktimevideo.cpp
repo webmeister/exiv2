@@ -611,9 +611,15 @@ namespace Exiv2 {
 
     using namespace Exiv2::Internal;
 
+#ifdef EXV_USING_CPP_ELEVEN
+    QuickTimeVideo::QuickTimeVideo(BasicIo::AutoPtr io)
+            : Image(ImageType::qtime, mdNone, std::move(io))
+            , timeScale_(1)
+#else
     QuickTimeVideo::QuickTimeVideo(BasicIo::AutoPtr io)
             : Image(ImageType::qtime, mdNone, io)
             , timeScale_(1)
+#endif
     {
     } // QuickTimeVideo::QuickTimeVideo
 
@@ -1632,7 +1638,11 @@ namespace Exiv2 {
 
 
     Image::AutoPtr newQTimeInstance(BasicIo::AutoPtr io, bool /*create*/) {
+#ifdef EXV_USING_CPP_ELEVEN
+        Image::AutoPtr image(new QuickTimeVideo(std::move(io)));
+#else
         Image::AutoPtr image(new QuickTimeVideo(io));
+#endif
         if (!image->good()) {
             image.reset();
         }
