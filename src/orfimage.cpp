@@ -125,7 +125,10 @@ namespace Exiv2 {
         }
         clearMetadata();
         std::ofstream devnull;
+        if (nullptr != dynamic_cast<RemoteIo*>(io_.get()))
+        {
         printStructure(devnull, kpsRecursive, 0);
+        }
         ByteOrder bo = OrfParser::decode(exifData_,
                                          iptcData_,
                                          xmpData_,

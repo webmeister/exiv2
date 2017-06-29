@@ -802,6 +802,8 @@ namespace Exiv2 {
     BasicIo::AutoPtr ImageFactory::createIo(const std::string& path, bool useCurl)
     {
         Protocol fProt = fileProtocol(path);
+        if (fProt == pBlockFileUri)
+            return BasicIo::AutoPtr(new BlockFileIo(path)); // may throw
 #if EXV_USE_SSH == 1
         if (fProt == pSsh || fProt == pSftp) {
             return BasicIo::AutoPtr(new SshIo(path)); // may throw
@@ -828,6 +830,8 @@ namespace Exiv2 {
     BasicIo::AutoPtr ImageFactory::createIo(const std::wstring& wpath, bool useCurl)
     {
         Protocol fProt = fileProtocol(wpath);
+        if (fProt == pBlockFileUri)
+            return BasicIo::AutoPtr(new BlockFileIo(wpath)); // may throw
 #if EXV_USE_SSH == 1
         if (fProt == pSsh || fProt == pSftp) {
             return BasicIo::AutoPtr(new SshIo(wpath));

@@ -140,7 +140,10 @@ namespace Exiv2 {
         // we should put this into clearMetadata(), however it breaks the test suite!
         try {
             std::ofstream devnull;
+            if (nullptr != dynamic_cast<RemoteIo*>(io_.get()))
+            {
             printStructure(devnull,kpsRecursive,0);
+            }
         } catch (Exiv2::Error& /* e */) {
             DataBuf file(io().size());
             io_->read(file.pData_,file.size_);
