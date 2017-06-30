@@ -404,10 +404,9 @@ namespace Exiv2 {
                                 ;
 
                 // if ( offset > io.size() ) offset = 0; // Denial of service?
-                DataBuf  buf(size*count + pad+20);  // allocate a buffer
                 int buffer_size = size * count + pad + 20;
                 if (buffer_size < 4) buffer_size = 4;
-                    DataBuf  buf(buffer_size);  // allocate a buffer
+                DataBuf  buf(buffer_size);  // allocate a buffer
                 std::memcpy(buf.pData_,dir.pData_+8,4);  // copy dir[8:11] into buffer (short strings)
                 if ( count*size > 4 ) {            // read into buffer
                     size_t   restore = io.tell();  // save
