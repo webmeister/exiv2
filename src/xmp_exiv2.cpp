@@ -690,6 +690,169 @@ namespace Exiv2 {
 #endif // !EXV_HAVE_XMP_TOOLKIT
 
 #ifdef EXV_HAVE_XMP_TOOLKIT
+    int XmpParser::videodecode(      XmpData&     xmpData,
+                                const std::string& xmpPacket)
+    { try {
+            xmpData.setPacket(xmpPacket);
+            if (xmpPacket.empty()) return 0;
+
+            SXMPMeta::Initialize();
+            std::string registeredNamespaces;
+            SXMPMeta::RegisterNamespace("http://ns.adobe.com/lightroom/1.0/", "lr", &registeredNamespaces);
+            SXMPMeta::RegisterNamespace("http://rs.tdwg.org/dwc/index.htm", "dwc", &registeredNamespaces);
+            SXMPMeta::RegisterNamespace("http://purl.org/dc/terms/", "dcterms", &registeredNamespaces);
+            SXMPMeta::RegisterNamespace("http://www.digikam.org/ns/1.0/", "digiKam", &registeredNamespaces);
+            SXMPMeta::RegisterNamespace("http://www.digikam.org/ns/kipi/1.0/", "kipi", &registeredNamespaces);
+            SXMPMeta::RegisterNamespace("http://ns.microsoft.com/photo/1.0/", "MicrosoftPhoto", &registeredNamespaces);
+            SXMPMeta::RegisterNamespace("http://ns.acdsee.com/iptc/1.0/", "acdsee", &registeredNamespaces);
+            SXMPMeta::RegisterNamespace("http://iptc.org/std/Iptc4xmpExt/2008-02-29/", "iptcExt", &registeredNamespaces);
+            SXMPMeta::RegisterNamespace("http://ns.useplus.org/ldf/xmp/1.0/", "plus", &registeredNamespaces);
+            SXMPMeta::RegisterNamespace("http://ns.iview-multimedia.com/mediapro/1.0/", "mediapro", &registeredNamespaces);
+            SXMPMeta::RegisterNamespace("http://ns.microsoft.com/expressionmedia/1.0/", "expressionmedia", &registeredNamespaces);
+            SXMPMeta::RegisterNamespace("http://ns.microsoft.com/photo/1.2/", "MP", &registeredNamespaces);
+            SXMPMeta::RegisterNamespace("http://ns.microsoft.com/photo/1.2/t/RegionInfo#", "MPRI", &registeredNamespaces);
+            SXMPMeta::RegisterNamespace("http://ns.microsoft.com/photo/1.2/t/Region#", "MPReg", &registeredNamespaces);
+            SXMPMeta::RegisterNamespace("http://ns.google.com/photos/1.0/panorama/", "GPano", &registeredNamespaces);
+            SXMPMeta::RegisterNamespace("http://www.metadataworkinggroup.com/schemas/regions/", "mwg-rs", &registeredNamespaces);
+            SXMPMeta::RegisterNamespace("http://www.metadataworkinggroup.com/schemas/keywords/", "mwg-kw", &registeredNamespaces);
+            SXMPMeta::RegisterNamespace("http://ns.adobe.com/xmp/sType/Area#", "stArea", &registeredNamespaces);
+            SXMPMeta::RegisterNamespace("http://cipa.jp/exif/1.0/", "exifEX", &registeredNamespaces);
+            SXMPMeta::RegisterNamespace("http://ns.adobe.com/camera-raw-saved-settings/1.0/", "crss", &registeredNamespaces);
+            SXMPMeta::RegisterNamespace("http://www.audio/", "audio", &registeredNamespaces);
+            SXMPMeta::RegisterNamespace("http://www.video/", "video", &registeredNamespaces);
+
+            SXMPMeta meta(xmpPacket.data(), static_cast<XMP_StringLen>(xmpPacket.size()));
+            SXMPIterator iter(meta);
+            std::string schemaNs, propPath, propValue;
+            XMP_OptionBits opt;
+            while (iter.Next(&schemaNs, &propPath, &propValue, &opt)) {
+                printNode(schemaNs, propPath, propValue, opt);
+                if (XMP_PropIsAlias(opt)) {
+                    throw Error(47, schemaNs, propPath, propValue);
+                    continue;
+                }
+                if (XMP_NodeIsSchema(opt)) {
+                    // Register unknown namespaces with Exiv2
+                    // (Namespaces are automatically registered with the XMP Toolkit)
+                    if (XmpProperties::prefix(schemaNs).empty()) {
+                        std::string prefix;
+                        bool ret = meta.GetNamespacePrefix(schemaNs.c_str(), &prefix);
+                        if (!ret) throw Error(45, schemaNs);
+                        prefix = prefix.substr(0, prefix.size() - 1);
+                        XmpProperties::registerNs(schemaNs, prefix);
+                    }
+                    continue;
+                }
+                XmpKey::AutoPtr key = makeXmpKey(schemaNs, propPath);
+                if (XMP_ArrayIsAltText(opt)) {
+                    // Read Lang Alt property
+                    LangAltValue::AutoPtr val(new LangAltValue);
+                    XMP_Index count = meta.CountArrayItems(schemaNs.c_str(), propPath.c_str());
+                    while (count-- > 0) {
+                        // Get the text
+                        bool haveNext = iter.Next(&schemaNs, &propPath, &propValue, &opt);
+                        printNode(schemaNs, propPath, propValue, opt);
+                        if (   !haveNext
+                               || !XMP_PropIsSimple(opt)
+                               || !XMP_PropHasLang(opt)) {
+                            throw Error(41, propPath, opt);
+                        }
+                        const std::string text = propValue;
+                        // Get the language qualifier
+                        haveNext = iter.Next(&schemaNs, &propPath, &propValue, &opt);
+                        printNode(schemaNs, propPath, propValue, opt);
+                        if (   !haveNext
+                               || !XMP_PropIsSimple(opt)
+                               || !XMP_PropIsQualifier(opt)
+                               || propPath.substr(propPath.size() - 8, 8) != "xml:lang") {
+                            throw Error(42, propPath, opt);
+                        }
+                        val->value_[propValue] = text;
+                    }
+                    xmpData.add(*key.get(), val.get());
+                    continue;
+                }
+                if (    XMP_PropIsArray(opt)
+                        && !XMP_PropHasQualifiers(opt)
+                        && !XMP_ArrayIsAltText(opt)) {
+                    // Check if all elements are simple
+                    bool simpleArray = true;
+                    SXMPIterator aIter(meta, schemaNs.c_str(), propPath.c_str());
+                    std::string aSchemaNs, aPropPath, aPropValue;
+                    XMP_OptionBits aOpt;
+                    while (aIter.Next(&aSchemaNs, &aPropPath, &aPropValue, &aOpt)) {
+                        if (propPath == aPropPath) continue;
+                        if (   !XMP_PropIsSimple(aOpt)
+                               ||  XMP_PropHasQualifiers(aOpt)
+                               ||  XMP_PropIsQualifier(aOpt)
+                               ||  XMP_NodeIsSchema(aOpt)
+                               ||  XMP_PropIsAlias(aOpt)) {
+                            simpleArray = false;
+                            break;
+                        }
+                    }
+                    if (simpleArray) {
+                        // Read the array into an XmpArrayValue
+                        XmpArrayValue::AutoPtr val(new XmpArrayValue(arrayValueTypeId(opt)));
+                        XMP_Index count = meta.CountArrayItems(schemaNs.c_str(), propPath.c_str());
+                        while (count-- > 0) {
+                            iter.Next(&schemaNs, &propPath, &propValue, &opt);
+                            printNode(schemaNs, propPath, propValue, opt);
+                            val->read(propValue);
+                        }
+                        xmpData.add(*key.get(), val.get());
+                        continue;
+                    }
+                }
+                XmpTextValue::AutoPtr val(new XmpTextValue);
+                if (   XMP_PropIsStruct(opt)
+                       || XMP_PropIsArray(opt)) {
+                    // Create a metadatum with only XMP options
+                    val->setXmpArrayType(xmpArrayType(opt));
+                    val->setXmpStruct(xmpStruct(opt));
+                    xmpData.add(*key.get(), val.get());
+                    continue;
+                }
+                if (   XMP_PropIsSimple(opt)
+                       || XMP_PropIsQualifier(opt)) {
+                    val->read(propValue);
+                    xmpData.add(*key.get(), val.get());
+                    continue;
+                }
+                // Don't let any node go by unnoticed
+                throw Error(39, key->key(), opt);
+            } // iterate through all XMP nodes
+
+            return 0;
+        }
+#ifndef SUPPRESS_WARNINGS
+        catch (const XMP_Error& e) {
+            EXV_ERROR << Error(40, e.GetID(), e.GetErrMsg()) << "\n";
+            xmpData.clear();
+            return 3;
+        }
+#else
+        catch (const XMP_Error&) {
+        xmpData.clear();
+        return 3;
+    }
+#endif // SUPPRESS_WARNINGS
+    } // XmpParser::decode
+#else
+    int XmpParser::decode(      XmpData&     xmpData,
+                          const std::string& xmpPacket)
+    {
+        xmpData.clear();
+        if (!xmpPacket.empty()) {
+#ifndef SUPPRESS_WARNINGS
+            EXV_WARNING << "XMP toolkit support not compiled in.\n";
+#endif
+        }
+        return 1;
+    } // XmpParser::decode
+#endif // !EXV_HAVE_XMP_TOOLKIT
+
+#ifdef EXV_HAVE_XMP_TOOLKIT
     int XmpParser::encode(      std::string& xmpPacket,
                           const XmpData&     xmpData,
                                 uint16_t     formatFlags,

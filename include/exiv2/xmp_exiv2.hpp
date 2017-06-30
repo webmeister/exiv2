@@ -42,6 +42,14 @@
 #include <string>
 #include <vector>
 
+#ifndef FALSE
+#define FALSE 0
+#endif
+
+#ifndef TRUE
+#define TRUE 0
+#endif
+
 // *****************************************************************************
 // namespace extensions
 namespace Exiv2 {
@@ -297,6 +305,8 @@ namespace Exiv2 {
         */
         static int decode(      XmpData&     xmpData,
                           const std::string& xmpPacket);
+        static int videodecode( XmpData&     xmpData,
+                                const std::string& xmpPacket);
         /*!
           @brief Encode (serialize) XMP metadata from \em xmpData into a
                  string xmpPacket. The XMP packet returned in the string
