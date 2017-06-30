@@ -122,7 +122,7 @@ namespace Exiv2 {
                                          iptcData_,
                                          xmpData_,
                                          io_->mmap(),
-                                         io_->size());
+                                         (uint32_t) io_->size());
         setByteOrder(bo);
     } // Cr2Image::readMetadata
 
@@ -139,7 +139,7 @@ namespace Exiv2 {
             // Ensure that this is the correct image type
             if (isCr2Type(*io_, false)) {
                 pData = io_->mmap(true);
-                size = io_->size();
+                size = (long) io_->size();
                 Cr2Header cr2Header;
                 if (0 == cr2Header.read(pData, 16)) {
                     bo = cr2Header.byteOrder();
