@@ -76,8 +76,7 @@ IF ( NOT ${EXIV2_CPP_STANDARD} )
     SET ( EXIV2_CPP_STANDARD 11 )
 ENDIF ()
 
-# set include path for FindXXX.cmake files
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/config/")
+include(config/findDependencies.cmake)
 
 IF ( WIN32 OR MINGW OR MSVC )
     SET( XMPLIB_EXT lib )
@@ -112,9 +111,6 @@ IF( MINGW OR UNIX )
     execute_process(COMMAND ${CMAKE_CXX_COMPILER} -dumpversion OUTPUT_VARIABLE GCC_VERSION)
     string(REGEX MATCHALL "[0-9]+" GCC_VERSION_COMPONENTS ${GCC_VERSION})
     list(GET GCC_VERSION_COMPONENTS 0 GCC_MAJOR)
-    list(GET GCC_VERSION_COMPONENTS 1 GCC_MINOR)
-
-    message(STATUS Compiler: ${COMPILER} " Major:" ${GCC_MAJOR} " Minor:" ${GCC_MINOR})
 
 ENDIF( MINGW OR UNIX )
 
@@ -222,5 +218,6 @@ IF( MINGW OR UNIX OR APPLE)
   )
 ENDIF()
 
+INCLUDE( config/printSummary.cmake )
 # That's all Folks!
 ##

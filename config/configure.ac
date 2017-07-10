@@ -18,6 +18,7 @@ AC_CONFIG_AUX_DIR([./config])
 
 AC_CHECK_FILES([${srcdir}/xmpsdk/include/XMP.hpp], , [echo "Did not find XMP SDK headers"; exit -1])
 AC_CHECK_FILES([${srcdir}/xmpsdk/libXMPCore.a ${srcdir}/xmpsdk/libXMPFiles.a], , [echo "Did not find XMP SDK static lib"; exit -1])
+XMP_A_SUPPORT=yes
 
 # ---------------------------------------------------------------------------
 # Checks for programs.
@@ -354,6 +355,7 @@ AC_MSG_RESULT($STDCPP11_SUPPORT)
 if test "$STDCPP11_SUPPORT" = "yes"; then
     CPPFLAGS="${CPPFLAGS} -std=c++11 -DEXV_USING_CPP_ELEVEN"
 else
+
 # 1188 v0.26 uses c++98
 # 1188 v0.27 should have an option to specify versions such as c++11
 case "$host_os" in
@@ -370,6 +372,10 @@ case "$host_os" in
         fi
     ;;
 esac
+fi
+
+if test "$XMP_A_SUPPORT" = "yes"; then
+    CPPFLAGS="${CPPFLAGS} -DEXV_HAVE_XMP_TOOLKIT"
 fi
 
 # ---------------------------------------------------------------------------
