@@ -329,6 +329,7 @@ namespace Exiv2 {
         return rc;
     }
 
+#ifdef EXV_WITH_DANGEROUS_PRINTSTRUCTURE
     void TiffImage::printStructure(std::ostream& out, Exiv2::PrintStructureOption option,int depth)
     {
         if (io_->open() != 0) throw Error(kerDataSourceOpenFailed, io_->path(), strError());
@@ -343,5 +344,6 @@ namespace Exiv2 {
 
         printTiffStructure(io(),out,option,depth-1);
     }
+#endif // EXV_WITH_DANGEROUS_PRINTSTRUCTURE
 
 }                                       // namespace Exiv2

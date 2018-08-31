@@ -75,12 +75,14 @@ namespace Exiv2 {
         return 0;
     }
 
+#ifdef EXV_WITH_DANGEROUS_PRINTSTRUCTURE
     void Cr2Image::printStructure(std::ostream& out, Exiv2::PrintStructureOption option,int depth)
     {
         if (io_->open() != 0) throw Error(kerDataSourceOpenFailed, io_->path(), strError());
         io_->seek(0,BasicIo::beg);
         printTiffStructure(io(),out,option,depth-1);
     }
+#endif // EXV_WITH_DANGEROUS_PRINTSTRUCTURE
 
     void Cr2Image::setComment(const std::string& /*comment*/)
     {

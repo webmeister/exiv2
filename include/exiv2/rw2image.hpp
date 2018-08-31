@@ -75,7 +75,9 @@ namespace Exiv2 {
 
         //! @name Manipulators
         //@{
-        void printStructure(std::ostream& out, PrintStructureOption option,int depth);
+#ifdef EXV_WITH_DANGEROUS_PRINTSTRUCTURE
+        EXV_DEPRECATED void printStructure(std::ostream& out, PrintStructureOption option,int depth);
+#endif // EXV_WITH_DANGEROUS_PRINTSTRUCTURE
         void readMetadata();
         /*!
           @brief Todo: Write metadata back to the image. This method is not

@@ -408,6 +408,7 @@ namespace Exiv2 {
 
     /* =========================================== */
 
+#ifdef EXV_WITH_DANGEROUS_PRINTSTRUCTURE
     void WebPImage::printStructure(std::ostream& out, PrintStructureOption option,int depth)
     {
         if (io_->open() != 0) {
@@ -471,6 +472,7 @@ namespace Exiv2 {
             }
         }
     }
+#endif // EXV_WITH_DANGEROUS_PRINTSTRUCTURE
 
     /* =========================================== */
 

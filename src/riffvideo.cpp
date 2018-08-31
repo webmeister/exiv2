@@ -531,6 +531,7 @@ namespace Exiv2 {
         return true;
     }
 
+#ifdef EXV_WITH_DANGEROUS_PRINTSTRUCTURE
     void RiffVideo::printStructure(std::ostream& out, PrintStructureOption option, int depth) {
         if (io_->open() != 0) {
             throw Error(kerDataSourceOpenFailed, io_->path(), strError());
@@ -593,6 +594,7 @@ namespace Exiv2 {
             }
         }
     } // RiffVideo::printStructure
+#endif // EXV_WITH_DANGEROUS_PRINTSTRUCTURE
 
     void RiffVideo::writeMetadata()
     {

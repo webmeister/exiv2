@@ -170,36 +170,6 @@ namespace Exiv2
         throw(Error(kerInvalidSettingForImage, "Image comment", "JP2"));
     } // Jp2Image::setComment
 
-    static void lf(std::ostream& out,bool& bLF)
-    {
-        if ( bLF ) {
-            out << std::endl;
-            out.flush();
-            bLF = false ;
-        }
-    }
-
-    static bool isBigEndian()
-    {
-        union {
-            uint32_t i;
-            char c[4];
-        } e = { 0x01000000 };
-
-        return e.c[0]?true:false;
-    }
-
-    static std::string toAscii(long n)
-    {
-        const char* p = (const char*) &n;
-        std::string result;
-        bool bBigEndian = isBigEndian();
-        for ( int i = 0 ; i < 4 ; i++) {
-            result += p[ bBigEndian ? i : (3-i) ];
-        }
-        return result;
-    }
-
     void Jp2Image::readMetadata()
     {
 #ifdef DEBUG
@@ -449,6 +419,37 @@ namespace Exiv2
 
     } // Jp2Image::readMetadata
 
+#ifdef EXV_WITH_DANGEROUS_PRINTSTRUCTURE
+    static bool isBigEndian()
+    {
+        union {
+            uint32_t i;
+            char c[4];
+        } e = { 0x01000000 };
+
+        return e.c[0]?true:false;
+    }
+
+    static void lf(std::ostream& out,bool& bLF)
+    {
+        if ( bLF ) {
+            out << std::endl;
+            out.flush();
+            bLF = false ;
+        }
+    }
+
+    static std::string toAscii(long n)
+    {
+        const char* p = (const char*) &n;
+        std::string result;
+        bool bBigEndian = isBigEndian();
+        for ( int i = 0 ; i < 4 ; i++) {
+            result += p[ bBigEndian ? i : (3-i) ];
+        }
+        return result;
+    }
+
     void Jp2Image::printStructure(std::ostream& out, PrintStructureOption option,int depth)
     {
         if (io_->open() != 0) throw Error(kerDataSourceOpenFailed, io_->path(), strError());
@@ -593,6 +594,7 @@ namespace Exiv2
             }
         }
     } // JpegBase::printStructure
+#endif // EXV_WITH_DANGEROUS_PRINTSTRUCTURE
 
     void Jp2Image::writeMetadata()
     {

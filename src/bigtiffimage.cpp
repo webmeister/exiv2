@@ -178,16 +178,19 @@ namespace Exiv2
                     return std::string();
                 }
 
-                void printStructure(std::ostream& os, PrintStructureOption option, int depth)
+#ifdef EXV_WITH_DANGEROUS_PRINTSTRUCTURE
+                EXV_DEPRECATED void printStructure(std::ostream& os, PrintStructureOption option, int depth)
                 {
                     printIFD(os, option, header_.dirOffset(), depth - 1);
                 }
+#endif // EXV_WITH_DANGEROUS_PRINTSTRUCTURE
 
             private:
                 Header header_;
                 int dataSize_;
                 bool doSwap_;
 
+#ifdef EXV_WITH_DANGEROUS_PRINTSTRUCTURE
                 void printIFD(std::ostream& out, PrintStructureOption option, uint64_t dir_offset, int depth)
                 {
                     BasicIo& io = Image::io();
@@ -402,6 +405,7 @@ namespace Exiv2
 
                     depth--;
                 }
+#endif // EXV_WITH_DANGEROUS_PRINTSTRUCTURE
 
                 uint64_t readData(int size) const
                 {

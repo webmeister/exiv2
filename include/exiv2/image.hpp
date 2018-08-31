@@ -106,7 +106,7 @@ namespace Exiv2 {
           @warning This function is not thread safe and intended for exiv2 -pS for debugging.
           @warning You may need to put the stream into binary mode (see src/actions.cpp)
          */
-        virtual void printStructure(std::ostream& out, PrintStructureOption option =kpsNone, int depth=0);
+        EXV_DEPRECATED virtual void printStructure(std::ostream& out, PrintStructureOption option =kpsNone, int depth=0);
         /*!
           @brief Read all metadata supported by a specific image format from the
               image. Before this method is called, the image metadata will be
@@ -319,17 +319,19 @@ namespace Exiv2 {
          */
         void setByteOrder(ByteOrder byteOrder);
 
+#ifdef EXV_WITH_DANGEROUS_PRINTIFD
         /*!
           @brief Print out the structure of image file.
           @throw Error if reading of the file fails or the image data is
                 not valid (does not look like data of the specific image type).
          */
-        void printTiffStructure(BasicIo& io,std::ostream& out, PrintStructureOption option,int depth,size_t offset=0);
+        EXV_DEPRECATED void printTiffStructure(BasicIo& io,std::ostream& out, PrintStructureOption option,int depth,size_t offset=0);
 
         /*!
           @brief Print out the structure of a TIFF IFD
          */
-        void printIFDStructure(BasicIo& io, std::ostream& out, Exiv2::PrintStructureOption option,uint32_t start,bool bSwap,char c,int depth);
+        EXV_DEPRECATED void printIFDStructure(BasicIo& io, std::ostream& out, Exiv2::PrintStructureOption option,uint32_t start,bool bSwap,char c,int depth);
+#endif // EXV_WITH_DANGEROUS_PRINTIFD
 
         /*!
           @brief is the host platform bigEndian

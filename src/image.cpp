@@ -327,6 +327,7 @@ namespace Exiv2 {
         return result;
     }
 
+#ifdef EXV_WITH_DANGEROUS_PRINTIFD
     static bool typeValid(uint16_t type)
     {
         return type >= 1 && type <= 13 ;
@@ -534,6 +535,7 @@ namespace Exiv2 {
             printIFDStructure(io,out,option,start+(uint32_t)offset,bSwap,c,depth);
         }
     }
+#endif // EXV_WITH_DANGEROUS_PRINTIFD
 
     void Image::clearMetadata()
     {

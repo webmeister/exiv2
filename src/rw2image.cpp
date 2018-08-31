@@ -96,6 +96,7 @@ namespace Exiv2 {
         throw(Error(kerInvalidSettingForImage, "Image comment", "RW2"));
     }
 
+#ifdef EXV_WITH_DANGEROUS_PRINTSTRUCTURE
     void Rw2Image::printStructure(std::ostream& out, PrintStructureOption option, int depth) {
         out << "RW2 IMAGE" << std::endl;
         if (io_->open() != 0) throw Error(kerDataSourceOpenFailed, io_->path(), strError());
@@ -110,6 +111,7 @@ namespace Exiv2 {
 
         printTiffStructure(io(),out,option,depth-1);
     } // Rw2Image::printStructure
+#endif // EXV_WITH_DANGEROUS_PRINTSTRUCTURE
 
     void Rw2Image::readMetadata()
     {

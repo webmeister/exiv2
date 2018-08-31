@@ -156,8 +156,6 @@ namespace {
      */
     std::ostream& operator<<( std::ostream& os, std::pair<std::string, int> strAndWidth);
 
-    //! Print image Structure information
-    int printStructure(std::ostream& out, Exiv2::PrintStructureOption option, const std::string &path);
 }
 
 // *****************************************************************************
@@ -232,35 +230,16 @@ namespace Action {
     {
     }
 
-    int setModeAndPrintStructure(Exiv2::PrintStructureOption option, const std::string& path)
-    {
-        _setmode(_fileno(stdout),O_BINARY);
-        return printStructure(std::cout, option, path);
-    }
-
     int Print::run(const std::string& path)
     {
         try {
             path_ = path;
             int rc = 0;
-            Exiv2::PrintStructureOption option = Exiv2::kpsNone ;
             switch (Params::instance().printMode_) {
                 case Params::pmSummary:   rc = printSummary();     break;
                 case Params::pmList:      rc = printList();        break;
                 case Params::pmComment:   rc = printComment();     break;
                 case Params::pmPreview:   rc = printPreviewList(); break;
-                case Params::pmStructure: rc = printStructure(std::cout,Exiv2::kpsBasic, path_)     ; break;
-                case Params::pmRecursive: rc = printStructure(std::cout,Exiv2::kpsRecursive, path_) ; break;
-                case Params::pmXMP:
-                    if (option == Exiv2::kpsNone)
-                        option = Exiv2::kpsXMP;
-                    rc = setModeAndPrintStructure(option, path_);
-                    break;
-                case Params::pmIccProfile:
-                    if (option == Exiv2::kpsNone)
-                        option = Exiv2::kpsIccProfile;
-                    rc = setModeAndPrintStructure(option, path_);
-                    break;
             }
             return rc;
         }
@@ -952,9 +931,6 @@ namespace Action {
         }
         if (0 == rc && Params::instance().target_ & Params::ctIccProfile) {
             rc = eraseIccProfile(image.get());
-        }
-        if (0 == rc && Params::instance().target_ & Params::ctIptcRaw) {
-            rc = printStructure(std::cout,Exiv2::kpsIptcErase,path_);
         }
 
         if (0 == rc) {
@@ -2159,17 +2135,9 @@ namespace {
             // #1148 use Raw XMP packet if there are no XMP modification commands
             int tRawSidecar = Params::ctXmpSidecar | Params::ctXmpRaw; // option -eXX
             // printTarget("in metacopy",Params::instance().target_,true);
-            if( Params::instance().modifyCmds_.size() == 0
-            && (Params::instance().target_ & tRawSidecar) == tRawSidecar
-            ){
-                // std::cout << "short cut" << std::endl;
-                // http://www.cplusplus.com/doc/tutorial/files/
-                std::ofstream os;
-                os.open(target.c_str());
-                sourceImage->printStructure(os,Exiv2::kpsXMP);
-                os.close();
-                rc = 0;
-            } else if ( preserve ) {
+            if ( ((Params::instance().modifyCmds_.size() != 0)
+                  || ((Params::instance().target_ & tRawSidecar) != tRawSidecar))
+                  && preserve ) {
                 Exiv2::XmpData::const_iterator end = sourceImage->xmpData().end();
                 for (Exiv2::XmpData::const_iterator i = sourceImage->xmpData().begin(); i != end; ++i) {
                     targetImage->xmpData()[i->key()] = i->value();
@@ -2356,18 +2324,5 @@ namespace {
         minChCount += str.size() - count;
       }
       return os << std::setw( minChCount) << str;
-    }
-
-    int printStructure(std::ostream& out, Exiv2::PrintStructureOption option, const std::string &path)
-    {
-        if (!Exiv2::fileExists(path, true)) {
-            std::cerr << path << ": "
-                      << _("Failed to open the file\n");
-            return -1;
-        }
-        Exiv2::Image::AutoPtr image = Exiv2::ImageFactory::open(path);
-        assert(image.get() != 0);
-        image->printStructure(out,option);
-        return 0;
     }
 }

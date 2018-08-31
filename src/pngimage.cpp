@@ -149,6 +149,19 @@ namespace Exiv2 {
         return zlibResult == Z_OK ;
     }
 
+    std::string upper(const std::string& str)
+    {
+        std::string result;
+        transform(str.begin(), str.end(), std::back_inserter(result), toupper);
+        return result;
+    }
+
+    std::string::size_type findi(const std::string& str, const std::string& substr)
+    {
+        return upper(str).find(upper(substr) );
+    }
+
+#ifdef EXV_WITH_DANGEROUS_PRINTSTRUCTURE
     static bool tEXtToDataBuf(const byte* bytes,long length,DataBuf& result)
     {
         static const char* hexdigits = "0123456789ABCDEF";
@@ -197,18 +210,6 @@ namespace Exiv2 {
             }
         }
         return true;
-    }
-
-    std::string upper(const std::string& str)
-    {
-        std::string result;
-        transform(str.begin(), str.end(), std::back_inserter(result), toupper);
-        return result;
-    }
-
-    std::string::size_type findi(const std::string& str, const std::string& substr)
-    {
-        return upper(str).find(upper(substr) );
     }
 
     void PngImage::printStructure(std::ostream& out, PrintStructureOption option, int depth)
@@ -385,6 +386,7 @@ namespace Exiv2 {
             }
         }
     }
+#endif // EXV_WITH_DANGEROUS_PRINTSTRUCTURE
 
     void PngImage::readMetadata()
     {

@@ -565,6 +565,7 @@ namespace Exiv2 {
      out << Internal::stringFormat("%8ld | 0xff%02x %-5s", \
                              io_->tell()-2,marker,nm[marker].c_str())
 
+#ifdef EXV_WITH_DANGEROUS_PRINTSTRUCTURE
     void JpegBase::printStructure(std::ostream& out, PrintStructureOption option, int depth)
     {
         if (io_->open() != 0)
@@ -882,6 +883,7 @@ namespace Exiv2 {
             readMetadata();
         }
     }  // JpegBase::printStructure
+#endif // EXV_WITH_DANGEROUS_PRINTSTRUCTURE
 
     void JpegBase::writeMetadata()
     {

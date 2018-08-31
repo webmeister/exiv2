@@ -71,7 +71,9 @@ namespace Exiv2 {
         //@{
         void readMetadata();
         void writeMetadata();
-        void printStructure(std::ostream& out, PrintStructureOption option,int depth);
+#ifdef EXV_WITH_DANGEROUS_PRINTSTRUCTURE
+        EXV_DEPRECATED void printStructure(std::ostream& out, PrintStructureOption option,int depth);
+#endif // EXV_WITH_DANGEROUS_PRINTSTRUCTURE
         //@}
 
         /*!

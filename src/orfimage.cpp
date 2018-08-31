@@ -85,6 +85,7 @@ namespace Exiv2 {
         throw(Error(kerInvalidSettingForImage, "Image comment", "ORF"));
     }
 
+#ifdef EXV_WITH_DANGEROUS_PRINTSTRUCTURE
     void OrfImage::printStructure(std::ostream& out, PrintStructureOption option, int depth) {
         out << "ORF IMAGE" << std::endl;
         if (io_->open() != 0) throw Error(kerDataSourceOpenFailed, io_->path(), strError());
@@ -99,6 +100,7 @@ namespace Exiv2 {
 
         printTiffStructure(io(),out,option,depth-1);
     } // OrfImage::printStructure
+#endif // EXV_WITH_DANGEROUS_PRINTSTRUCTURE
 
     void OrfImage::readMetadata()
     {
