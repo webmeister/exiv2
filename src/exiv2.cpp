@@ -255,7 +255,6 @@ std::string Params::printTarget(std::string before,int target,bool bPrint,std::o
     if ( target & Params::ctXmpRaw     ) t+= target & Params::ctXmpSidecar ? 'X' : 'R' ;
     if ( target & Params::ctIptc       ) t+= 'i';
     if ( target & Params::ctIccProfile ) t+= 'C';
-    if ( target & Params::ctIptcRaw    ) t+= 'I';
     if ( target & Params::ctXmp        ) t+= 'x';
     if ( target & Params::ctComment    ) t+= 'c';
     if ( target & Params::ctThumb      ) t+= 't';
@@ -320,13 +319,8 @@ void Params::help(std::ostream& os) const
        << _("             x : XMP properties (-PXkyct)\n")
        << _("             c : JPEG comment\n")
        << _("             p : list available previews\n")
-       << _("             C : print ICC profile embedded in image\n")
-       << _("             R : recursive print structure of image\n")
-       << _("             S : print structure of image\n")
-       << _("             X : extract XMP from image\n")
        << _("   -P flgs Print flags for fine control of tag lists ('print' action):\n")
        << _("             E : include Exif tags in the list\n")
-       << _("             I : IPTC datasets\n")
        << _("             X : XMP properties\n")
        << _("             x : print a column with the tag number\n")
        << _("             g : group name\n")
@@ -607,10 +601,6 @@ int Params::evalPrint(const std::string& optarg)
         case 'x': rc = evalPrintFlags("Xkyct"); break;
         case 'c': action_ = Action::print; printMode_ = pmComment    ; break;
         case 'p': action_ = Action::print; printMode_ = pmPreview    ; break;
-        case 'C': action_ = Action::print; printMode_ = pmIccProfile ; break;
-        case 'R': action_ = Action::print; printMode_ = pmRecursive  ; break;
-        case 'S': action_ = Action::print; printMode_ = pmStructure  ; break;
-        case 'X': action_ = Action::print; printMode_ = pmXMP        ; break;
         default:
             std::cerr << progname() << ": " << _("Unrecognized print mode") << " `"
                       << optarg << "'\n";
@@ -1164,9 +1154,6 @@ namespace {
                     break;
                 case 'C':
                     target |= Params::ctIccProfile;
-                    break;
-                case 'I':
-                    target |= Params::ctIptcRaw;
                     break;
                 case '-':
                     target |= Params::ctStdInOut;

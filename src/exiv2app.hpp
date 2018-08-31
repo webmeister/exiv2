@@ -167,10 +167,6 @@ public:
         pmList,
         pmComment,
         pmPreview,
-        pmStructure,
-        pmXMP,
-        pmIccProfile,
-        pmRecursive
     };
 
     //! Individual items to print, bitmap
@@ -201,7 +197,6 @@ public:
         ctIccProfile = 128,
         ctXmpRaw     = 256,
         ctStdInOut   = 512,
-        ctIptcRaw    =1024
     };
 
     //! Enumerates the policies to handle existing files in rename action
