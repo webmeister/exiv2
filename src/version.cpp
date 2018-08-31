@@ -57,6 +57,10 @@
 #include <stdio.h>
 #include <iostream>
 
+#if defined(EXV_HAVE_REGEX_H)
+#include <regex.h>
+#endif
+
 // #1147
 #ifndef WIN32
 #include <unistd.h>
