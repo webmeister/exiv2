@@ -230,6 +230,20 @@ typedef int pid_t;
 # endif
 #endif
 
+/*!
+ * @defmacro EXV_DEPRECATED
+ * @brief Marks a function as deprecated.
+ */
+#if __cplusplus >= 201402L
+#define EXV_DEPRECATED [[deprecated]]
+#elif defined(__GNUC__) || defined(__clang__)
+#define EXV_DEPRECATED __attribute__((deprecated))
+#elif defined(_MSC_VER)
+#define EXV_DEPRECATED __declspec(deprecated)
+#else
+#define EXV_DEPRECATED
+#endif
+
 //
 // That's all Folks!
 #endif // _CONFIG_H_
