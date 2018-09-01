@@ -76,7 +76,6 @@ TESTS  = addmoddel.sh         \
          path-test.sh         \
          preview-test.sh      \
          stringto-test.sh     \
-         tiff-test.sh         \
          webp-test.sh         \
          write-test.sh        \
          write2-test.sh       \
