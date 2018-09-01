@@ -68,7 +68,6 @@ TESTS  = addmoddel.sh         \
          exiv2-test.sh        \
          geotag-test.sh       \
          imagetest.sh         \
-         icc-test.sh          \
          iotest.sh            \
          iptctest.sh          \
          iso65k-test.sh       \
@@ -76,11 +75,12 @@ TESTS  = addmoddel.sh         \
          path-test.sh         \
          preview-test.sh      \
          stringto-test.sh     \
-         webp-test.sh         \
          write-test.sh        \
          write2-test.sh       \
          xmpparser-test.sh    \
-         version-test.sh
+         version-test.sh      \
+         # icc-test.sh          \
+         webp-test.sh
 
 # video tests
 TESTV  = video-test.sh
