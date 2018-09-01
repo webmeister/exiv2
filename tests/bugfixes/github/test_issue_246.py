@@ -10,17 +10,15 @@ class TestFirstPoC(metaclass=system_tests.CaseMeta):
     """
     url = "https://github.com/Exiv2/exiv2/issues/246"
 
-    filename = "$data_path/1-string-format.jpg"
-    commands = ["$exiv2 -pS " + filename]
+    filename = system_tests.path("$data_path/1-string-format.jpg")
+    commands = ["$exiv2 -pa $filename"]
     stdout = [
-        """STRUCTURE OF JPEG FILE: """ + filename + """
- address | marker       |  length | data
-       0 | 0xffd8 SOI  
-       2 | 0xffe1 APP1  |      60 | Exif..II*.....0.i...........0000
-"""]
+        """Exif.Image.ExifTag                           Long        1  26
+Exif.Photo.Flash                             SRational   1  No flash
+"""
+    ]
 
+    stderr = [""]
+    retval = [0]
 
-    stderr = ["""$exiv2_exception_message """ + filename + """:
-$kerNoImageInInputData
-"""]
-    retval = [1]
+    compare_stderr = system_tests.check_no_ASAN_UBSAN_errors
