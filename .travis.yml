@@ -27,7 +27,9 @@ matrix:
           - sourceline: 'ppa:ubuntu-toolchain-r/test'
           packages:
             - g++-8
-      env: CC=gcc-8 CXX=g++-8 CMAKE_OPTIONS="-DCMAKE_BUILD_TYPE=Release -DEXIV2_ENABLE_VIDEO=ON -DEXIV2_ENABLE_WEBREADY=ON -DEXIV2_BUILD_UNIT_TESTS=ON"
+      env:
+        - MATRIX_EVAL="CC=gcc-8 && CXX=g++-8"
+        - CMAKE_OPTIONS="-DCMAKE_BUILD_TYPE=Release -DEXIV2_ENABLE_VIDEO=ON -DEXIV2_ENABLE_WEBREADY=ON -DEXIV2_BUILD_UNIT_TESTS=ON -DCMAKE_CXX_COMPILER=/usr/bin/g++-8 -DCMAKE_C_COMPILER=/usr/bin/gcc-8"
 
     - os: linux
       dist: trusty
@@ -46,6 +48,8 @@ env:
     #- CMAKE_OPTIONS="-DCMAKE_BUILD_TYPE=Release -DEXIV2_ENABLE_XMP=OFF -DEXIV2_ENABLE_NLS=OFF -DEXIV2_ENABLE_LENSDATA=OFF" # All disabled
     #- CMAKE_OPTIONS="-DCMAKE_BUILD_TYPE=Release -DEXIV2_ENABLE_WEBREADY=ON -DEXIV2_ENABLE_CURL=OFF -DEXIV2_ENABLE_SSH=OFF" # WebReady without SSH nor CURL
 
+before_install:
+  - eval "${MATRIX_EVAL}"
 install: ./ci/install.sh
 script:  ./ci/run.sh
 
