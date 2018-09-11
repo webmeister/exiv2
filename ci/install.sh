@@ -42,7 +42,7 @@ mkdir -p ~/.conan/profiles
 if [[ "$(uname -s)" == 'Linux' ]]; then
     CC_VER=$(${CC} --version | head -1 | awk '{print $3}'| awk -F'.' '{ print $1"."$2 }')
     CC_NAME=$(echo $CC | awk -F'-' '{ print $1 }')
-    printf "[settings]\nos=Linux\narch=x86_64\ncompiler=$CC_NAME\ncompiler.version=$CC_VER\ncompiler.libcxx=libstdc++\nbuild_type=Release\n" > ~/.conan/profiles/release
+    printf "[settings]\nos=Linux\narch=x86_64\ncompiler=$CC_NAME\ncompiler.version=$CC_VER\ncompiler.libcxx=libstdc++11\nbuild_type=Release\n" > ~/.conan/profiles/release
 else
     printf "[settings]\nos=Macos\narch=x86_64\ncompiler=apple-clang\ncompiler.version=9.0\ncompiler.libcxx=libc++\nbuild_type=Release\n" > ~/.conan/profiles/release
 fi
