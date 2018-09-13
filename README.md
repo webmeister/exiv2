@@ -35,85 +35,42 @@ For more information on XMP support in Exiv2, see [doc/README-XMP](https://githu
 
 ## Building and Installing
 
-You can build the libraries in the following ways:
+The project is configured with CMake and it should be possible to compile on the main operative
+systems and with most of the C++98 compilers. In [README-CMAKE.md](https://github.com/Exiv2/exiv2/blob/master/README-CMAKE.md)
+you will find more details about it.
 
-1 Autotools: UNIX-like systems (including GNU/Linux, MacOS-X, Cygwin (32 and 64), MinGW (32 and 64)
-  - general notes follow
-  - FAQ concerning Cygwin/MSYS and Mac OS X:
-    http://dev.exiv2.org/projects/exiv2/wiki/FAQ
+The default install locations are `/usr/local/lib` for the library, `/usr/local/bin` for the
+`exiv2` utility and `/usr/local/include/exiv2` for the header files. Use the cmake option
+`CMAKE_INSTALL_PREFIX` to change the default.
 
-2 Microsoft Visual C++ solutions
-  - see [msvc/ReadMe.txt](https://github.com/Exiv2/exiv2/blob/master/msvc/ReadMe.txt)      (32bit and 64bit builds Visual Studio 2005,08,10,12,13,15)
+We also provie a `uninstall` target in CMake to uninstall the project:
 
-3 CMake (support for all platforms/compilers except MinGW)
-  - see [README-CMAKE](https://github.com/Exiv2/exiv2/blob/master/README-CMAKE)
-    for more information
-
-To build a commercial version of the Exiv2 library, see also section
-"Commercial version" at the end of this file.
-
-On UNIX-like systems, use the GNU configure script. Run the following
-commands from the top directory (containing this file) to configure,
-build and install the library and utility:
-
-    $ ./configure
-    $ make
-    $ sudo make install  (Cygwin/MinGW $ make install)
-
-Caution:
-    If you downloaded the source code from the git repository,
-    you will have to generate the configure script:
-
-    $ make config
-    $ ./configure
-    $ make
-    $ sudo make install  (Cygwin/MinGW $ make install)
-
-To build the sample applications:
-
-    $ make samples
-
-The default install locations are `/usr/local/lib` for the library,
-`/usr/local/bin` for the `exiv2` utility and `/usr/local/include/exiv2` for the
-header files. Use the `--prefix=directory` option of the configure script to
-change the default. Run `./configure --help` to see a list of all options.
-
-To uninstall Exiv2 from a UNIX-like system, run:
-
-    $ sudo make uninstall
+```bash
+$ make uninstall
+```
 
 ## Dependencies
 
-The following libexiv2 features are enabled by default and may
-require external libraries. They can be controlled through configure
-options. See also `./configure --help`.
+The following **exiv2lib** features are enabled by default and they require external libraries.
+They can be controlled through some CMake options:
 
-    Feature                     Package   Configure options
+```
+    Feature                     Package   CMake options
     --------------------------  --------  ----------------------------
-    PNG image support           zlib      --without-zlib
-                                          --with-zlib=DIR
-    Native language support     gettext   --disable-nls
-    Characterset conversions    libiconv  --without-libiconv-prefix
-                                          --with-libiconv-prefix[=DIR]
-    XMP support                 expat     --disable-xmp
-                                          --with-expat=DIR
+    PNG image support           zlib      EXIV2_ENABLE_PNG
+    Native language support     gettext   EXIV2_ENABLE_NLS
+    Characterset conversions    libiconv  [Automatic detection]
+    XMP support                 expat     EXIV2_ENABLE_XMP
+                                          EXIV2_ENABLE_EXTERNAL_XMP
+    HTTO I/O					libcurl   EXIV2_ENABLE_CURL
+    SSH I/O                     libssh    EXIV2_ENABLE_SSH
+```
 
-	zlib         http://zlib.net/
-	gettext  *)  http://www.gnu.org/software/gettext/
-	libiconv *)  http://www.gnu.org/software/libiconv/
-	expat        http://expat.sourceforge.net/
+Some systems have gettext and iconv in libc. The CMake configuration step should detect this.
 
-*) Some systems have gettext and iconv in libc. The configure script
-(and CMake) should detect this.
-
-On Linux, it is usually best to install the dependencies through the
-package management system of the distribution together with the
-corresponding development packages (for the header files and static
-libraries).
-
-To build the sample programs in the [samples](https://github.com/Exiv2/exiv2/tree/master/samples)
-directory (`make samples`), you also need to have the `pkg-config`
-program.
+On Linux, it is usually best to install the dependencies through the package management system
+of the distribution together with the corresponding development packages (for the header files
+and static libraries).
 
 To generate the documentation (`make doc`), you will further need
 `doxygen`, `graphviz`, `python` and `xsltproc`.
@@ -125,12 +82,6 @@ To generate the documentation (`make doc`), you will further need
 	xsltproc     http://xmlsoft.org/XSLT/
 	md5sum       http://www.microbrew.org/tools/md5sha1sum/
 
-## Troubleshooting
-
-If you have problems building Exiv2 on UNIX-like systems, check the
-generated `config/config.mk` and `config/config.h` files. You should *not*
-need to modify any Makefile directly, in particular not `src/Makefile`!
-
 ## Support
 
 All project resources are accessible from the project website at
@@ -139,28 +90,13 @@ http://dev.exiv2.org/projects/exiv2/wiki
 Please send feedback or queries to the Exiv2 forum. For new bug reports
 and feature requests, please open an issue in Github.
 
-## Linking your own code with Exiv2
+## Consuming exiv2 in your own code
 
 A pkg-config .pc file is installed together with the library.
 Application developers can use `pkg-config(1)` to obtain correct
-compile and link time flags for the Exiv2 library. See
-[samples/Makefile](https://github.com/Exiv2/exiv2/blob/master/samples/Makefile)
-for an example.
+compile and link time flags for the Exiv2 library.
 
-If you downloaded Exiv2 directly from the git repository, and you want
-to build it using the GNU configure script, then you need to have GNU
-Autoconf installed on your system and create the configure script as
-the first step:
-
-    $ make config
-
-Then run the usual `./configure; make; make install` commands.
-
-Exiv2 uses GNU Libtool in order to build shared libraries on a variety
-of systems. While this is very nice for making usable binaries, it can
-be a pain when trying to debug a program. For that reason, compilation
-of shared libraries can be turned off by specifying the
-`--disable-shared` option to the configure script.
+Exiv2 can be also consumed easily with CMake. See  [README-CMAKE.md](https://github.com/Exiv2/exiv2/blob/master/README-CMAKE.md) for more details.
 
 ## License
 
