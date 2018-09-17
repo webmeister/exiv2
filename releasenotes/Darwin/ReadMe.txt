@@ -28,7 +28,7 @@ $ env DYLD_LIBRARY_PATH="$PWD/lib:$DYLD_LIBRARY_PATH" ./exifprint
 
 To install for use by all users
 -------------------------------
-$ for i in bin lib include ; do sudo cp -R $i /usr/local/$i ; done
+$ for i in bin lib include/exiv2 ; do sudo cp -R $i /usr/local/$i ; done
 
 To compile and link your own code using installed library and include files
 ---------------------------------------------------------------------------

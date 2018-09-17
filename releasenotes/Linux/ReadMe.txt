@@ -4,7 +4,7 @@ Structure of the bundle:
 ------------------------
 
 bin/exiv2                                 exiv2 and sample applications
-lib/libexiv2.27.0.1.dylib                 shared library
+lib/libexiv2.so.0.27.0.1                  shared library
 include/exiv2/                            include files
 share/                                    man pages
 samples/                                  sample code
@@ -21,16 +21,16 @@ README-CONAN.md
 To run exiv2 from the bundle
 ----------------------------
 $ cd <bundle>
-$ env DYLD_LIBRARY_PATH="$PWD/lib:$DYLD_LIBRARY_PATH" bin/exiv2
+$ env LD_LIBRARY_PATH="$PWD/lib:$LD_LIBRARY_PATH" bin/exiv2
 
 To build samples/exiftool.cpp from the bundle
 ---------------------------------------------
 $ g++ -std=c++98 samples/exifprint.cpp -L$PWD/lib -I$PWD/include -lexiv2 -o exifprint
-$ env DYLD_LIBRARY_PATH="$PWD/lib:$DYLD_LIBRARY_PATH" ./exifprint
+$ env LD_LIBRARY_PATH="$PWD/lib:$LD_LIBRARY_PATH" ./exifprint
 
 To install for use by all users
 -------------------------------
-$ for i in bin lib include ; do sudo cp -R $i /usr/local/$i ; done
+$ for i in bin lib include/exiv2 ; do sudo cp -R $i /usr/local/$i ; done
 
 To compile and link your own code using installed library and include files
 ---------------------------------------------------------------------------

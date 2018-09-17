@@ -1,11 +1,13 @@
-This is to be written for msvc from contrib/buildserver/dailyReadMe.txt
+MSVC 2017 Release DLL Bundle
+----------------------------
 
 Structure of the bundle:
 ------------------------
 
 bin/exiv2                                 exiv2 and sample applications
-lib/libexiv2.27.0.1.dylib                 shared library
+bin/libexiv2.dll and libcurl.dll          dlls
 include/exiv2/                            include files
+lib/exiv2.lib (and xmp.lib)               link libraries
 share/                                    man pages
 samples/                                  sample code
 contrib/Qt                                Qt code and notes
@@ -18,25 +20,32 @@ README-CMAKE.md
 README.md
 README-CONAN.md
 
-To run exiv2 from the bundle
-----------------------------
-$ cd <bundle>
-$ env DYLD_LIBRARY_PATH="$PWD/lib:$DYLD_LIBRARY_PATH" bin/exiv2
 
-To build samples/exiftool.cpp from the bundle
----------------------------------------------
-$ g++ -std=c++98 samples/exifprint.cpp -L$PWD/lib -I$PWD/include -lexiv2 -o exifprint
-$ env DYLD_LIBRARY_PATH="$PWD/lib:$DYLD_LIBRARY_PATH" ./exifprint
++----------------------------------------------------------------------------+
+| Caution: Use a Windows unzip utility such as 7z or winzip                  |
+| Cygwin unzip utilities can result in incorrect security with bin/exiv2.dll |
++----------------------------------------------------------------------------+
 
-To install for use by all users
--------------------------------
-$ for i in bin lib include ; do sudo cp -R $i /usr/local/$i ; done
+To run exiv2.exe from the bundle:
+c:\temp> cd <exiv2-0.27.0.1-msvc>\bin
+c:\temp\exiv2-0.27.0.1-msvc\bin> exiv2
 
-To compile and link your own code using installed library and include files
----------------------------------------------------------------------------
-$ g++ -std=c++98 samples/exifprint.cpp -L/usr/local/lib -lexiv2 -o exifprint
-$ ./exifprint --version
+Add the bin to your PATH:
+c:\temp\exiv2-0.27.0.1-msvc\bin>set PATH=%CD%;%PATH%
+
+
+To compile and link your own code:
+
++----------------------------------------------------------------------------+
+| Caution: You must use the same version of Visual Studio as the build       |
+|          You will need to use the "Visual Studio Command Prompt"           |
+|          or initialise the DOS environment by calling vcvarsall.bat        |
++----------------------------------------------------------------------------+
+
+c:\temp> cd exiv2-0.27.0.1-msvc
+c:\temp\exiv2-0.27.0.1-msvc> cl /EHsc -Iinclude /MD samples\exifprint.cpp /link lib\exiv2.lib
+c:\temp\exiv2-0.27.0.1-msvc> exifprint --version
 exiv2=0.27.0
 ...
 xmlns=xmpidq:http://ns.adobe.com/xmp/Identifier/qual/1.0/
-$
+c:\temp\exiv2-0.27.0.1-msvc>
