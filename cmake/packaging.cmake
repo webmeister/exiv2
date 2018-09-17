@@ -7,15 +7,21 @@ set(CPACK_SOURCE_IGNORE_FILES "build.*;\.git/;\.DS_Store/;test;third-party;")
 
 ## -----------------------------------------------
 ## TODO:  Luis will rewrite this -----------------
-if ( CYGWIN OR MINGW OR MSVC )
-    set(CPACK_GENERATOR TGZ)
+if ( MINGW )
+    set (PACKNAME MinGW)
+elif ( MSVC )
+    set (PACKNAME msvc)
 else()
-    set(CPACK_GENERATOR TBZ2)
+    set (PACKNAME ${CMAKE_SYSTEM_NAME}) # Darwin or Linux or CYGWIN
 endif()
 
-if ( MSVC )
-     set(CPACK_PACKAGE_FILE_NAME ${CPACK_PACKAGE_NAME}-${CPACK_PACKAGE_VERSION}-msvc)
+if ( CYGWIN OR MINGW OR MSVC )
+    set(CPACK_GENERATOR TGZ) # Windows, use .tar.gz
+else()
+    set(CPACK_GENERATOR TBZ2) # Linux or MacOS-X, use .tar.bz2
 endif()
+
+set(CPACK_PACKAGE_FILE_NAME ${CPACK_PACKAGE_NAME}-${CPACK_PACKAGE_VERSION}-${PACKNAME})
 
 # https://stackoverflow.com/questions/17495906/copying-files-and-including-them-in-a-cpack-archive
 install(DIRECTORY "${PROJECT_SOURCE_DIR}/samples/" DESTINATION "samples")
@@ -33,14 +39,9 @@ foreach(doc ${DOCS})
     install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/${doc} DESTINATION .)
 endforeach()
 
-# Copy releasenotes.txt and appropriate ReadMe.txt (eg releasenotes/Darwin/ReadMe.txt)
-if ( MSVC )
-    install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/releasenotes/msvc/ReadMe.txt DESTINATION .)
-else()
-    install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/releasenotes/${CMAKE_SYSTEM_NAME}/ReadMe.txt DESTINATION .)
-endif()
-
-install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/releasenotes/releasenotes.txt DESTINATION                .)
+# Copy releasenotes.txt and appropriate ReadMe.txt (eg releasenotes/${PACKNAME}/ReadMe.txt)
+install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/releasenotes/${PACKNAME}/ReadMe.txt DESTINATION .)
+install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/releasenotes/releasenotes.txt       DESTINATION .)
 
 ## TODO: End                     -----------------
 ## -----------------------------------------------
