@@ -20,7 +20,7 @@ if ( CYGWIN OR MINGW )
 elseif ( MSVC )
     set(CPACK_GENERATOR ZIP)  # use .zip - less likely to damage bin/exiv2.dll permissions
 else()
-    set(CPACK_GENERATOR TBZ2) # Linux or MacOS-X, use .tar.bz2
+    set(CPACK_GENERATOR TGZ)  # Linux or MacOS-X: use .tar.gz (works with tar xzf bundle.tar.gz)
 endif()
 
 set(CPACK_PACKAGE_FILE_NAME ${CPACK_PACKAGE_NAME}-${CPACK_PACKAGE_VERSION}-${PACKNAME})

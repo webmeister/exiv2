@@ -25,7 +25,7 @@ $ env LD_LIBRARY_PATH="$PWD/bin:$LD_LIBRARY_PATH" bin/exiv2
 To build samples/exiftool.cpp from the bundle
 ---------------------------------------------
 $ g++ -std=c++98 samples/exifprint.cpp -L$PWD/lib -I$PWD/include -lexiv2 -o exifprint
-$ env DYLD_LIBRARY_PATH="$PWD/lib:$DYLD_LIBRARY_PATH" ./exifprint
+$ env LD_LIBRARY_PATH="$PWD/lib:$LD_LIBRARY_PATH" ./exifprint
 
 To install for use by all users
 -------------------------------

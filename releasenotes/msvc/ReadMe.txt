@@ -20,7 +20,6 @@ README-CMAKE.md
 README.md
 README-CONAN.md
 
-
 +----------------------------------------------------------------------------+
 | Caution: Use a Windows unzip utility such as 7z or winzip                  |
 | Cygwin unzip utilities can result in incorrect security with bin/exiv2.dll |
