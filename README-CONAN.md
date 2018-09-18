@@ -1,13 +1,13 @@
-# How to use conan to build Exiv2 and dependencies
+![Exiv2](http://www.exiv2.org/include/exiv2-logo-big.png)
 
-Conan is a portable package manager for C/C++ libraries. It can be used to bring all the dependencies needed to
-build Exiv2 into local directories, without needing to install system packages.
+# Building Exiv2 dependencies with conan
+
+Conan is a portable package manager for C/C++ libraries. It can be used to create all  dependencies needed to build Exiv2, without needing to install system packages.
 
 This document provides a step-by-step guide to show you the basic usage of conan. For more details about the tool,
 please visit the [Conan documentation website](http://docs.conan.io/en/latest/).
 
-Although we provide step-by-step instructions to enable you to build Exiv2 with conan, we strongly recommend that you
-read conan's documentation to understand the main concepts: [Getting started with Conan](http://docs.conan.io/en/latest/getting_started.html)
+Although we provide step-by-step instructions to enable you to build Exiv2 with conan, we recommend that you read conan's documentation to understand the main concepts: [Getting started with Conan](http://docs.conan.io/en/latest/getting_started.html)
 
 To build Exiv2 with conan, you will also need to install CMake.  For more information see [README-CMAKE](README-CMAKE)
 
