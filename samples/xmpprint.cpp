@@ -16,7 +16,10 @@
 
 int main(int argc, char** argv)
 {
-try 
+  Exiv2::XmpParser::initialize();
+  ::atexit(Exiv2::XmpParser::terminate);
+
+  try
   {
     if (argc != 2) 
       {
@@ -24,7 +27,7 @@ try
         return 1;
       }
 
-    Exiv2::Image::AutoPtr image = Exiv2::ImageFactory::open(argv[1]);
+    Exiv2::Image::UniquePtr image = Exiv2::ImageFactory::open(argv[1]);
     assert (image.get() != 0);
     image->readMetadata();
 

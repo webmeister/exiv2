@@ -5,8 +5,7 @@
 //
 // https://github.com/benhoyt/inih
 
-#ifndef __INIREADER_H__
-#define __INIREADER_H__
+#pragma once
 
 #include "exiv2lib_export.h"
 
@@ -140,7 +139,7 @@ public:
     /*! @brief Construct INIReader and parse given filename. See ini.h for more info
        about the parsing.
     */
-    INIReader(std::string filename);
+    explicit INIReader(const std::string& filename);
 
     /*! @brief Return the result of ini_parse(), i.e., 0 on success, line number of
         first error on parse error, or -1 on file open error.
@@ -201,5 +200,3 @@ private:
                             const char* value); //!< value handler
 };
 } // namespace Exiv2
-
-#endif  // __INIREADER_H__

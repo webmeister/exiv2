@@ -154,14 +154,13 @@ namespace Exiv2 {
             std::ostringstream os;
             md_st->write(os, &ed);
             bool ok = false;
-            long st_val = parseLong(os.str(), ok);
+            const long st_val = parseLong(os.str(), ok);
             // SensivityType out of range or cannot be parsed properly
             if (!ok || st_val < 1 || st_val > 7)
                 break;
             // pick up list of ISO tags, and check for at least one of
             // them available.
             const SensKeyNameList *sensKeys = &sensitivityKey[st_val - 1];
-            md_st = ed.end();
             for (int idx = 0; idx < sensKeys->count; md_st = ed.end()) {
                 md_st = findMetadatum(ed, const_cast<const char**>(sensKeys->keys), sensKeys->count);
                 if (md_st == ed.end())
@@ -175,7 +174,7 @@ namespace Exiv2 {
                     md = md_st;
                     break;
                 }
-                while (strcmp(sensKeys->keys[idx++], md_st->key().c_str()) != 0 && idx < cnt) {}
+                while (strcmp(sensKeys->keys[idx++], md_st->key().c_str()) != 0 && idx < sensKeys->count) {}
             }
             break;
         }

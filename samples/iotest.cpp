@@ -46,7 +46,10 @@ int WriteReadSeek(BasicIo &io);
 // Main
 int main(int argc, char* const argv[])
 {
-try {
+    Exiv2::XmpParser::initialize();
+    ::atexit(Exiv2::XmpParser::terminate);
+
+    try {
     if (argc != 4) {
         std::cout << "Usage: " << argv[0] << " filein fileout1 fileout2\n";
         std::cout << "fileouts are overwritten and should match filein exactly\n";
@@ -101,7 +104,7 @@ try {
         throw Error(Exiv2::kerFileOpenFailed, argv[3], "w+b", strError());
     }
 
-    long readCount = 0;
+    size_t readCount = 0;
     byte buf[32];
     while ((readCount=fileOut1.read(buf, sizeof(buf)))) {
         if (memIo2.write(buf, readCount) != readCount) {

@@ -26,14 +26,16 @@
 // *****************************************************************************
 // included header files
 #include "types.hpp"
-#include "i18n.h"                               // for _exvGettext
-#include "unused.h"
+#include "enforce.hpp"
+#include "futils.hpp"
+#include "i18n.h"  // for _exvGettext
 #include "safe_op.hpp"
+#include "unused.h"
 
 // + standard includes
-#ifdef EXV_UNICODE_PATH
+#if defined(_MSC_VER) || defined(__CYGWIN__) || defined(__MINGW__)
 # include <windows.h> // for MultiByteToWideChar etc
-#endif
+#endif // Windows
 #include <string>
 #include <iostream>
 #include <iomanip>
@@ -47,6 +49,7 @@
 #include <cstring>
 #include <cmath>
 #include <math.h>
+#include <mutex>
 
 // *****************************************************************************
 namespace {
@@ -116,7 +119,7 @@ namespace Exiv2 {
         return tit->typeId_;
     }
 
-    long TypeInfo::typeSize(TypeId typeId)
+    size_t TypeInfo::typeSize(TypeId typeId)
     {
         const TypeInfoTable* tit = find(typeInfoTable, typeId);
         if (!tit) return 0;
@@ -126,20 +129,22 @@ namespace Exiv2 {
     DataBuf::DataBuf(DataBuf& rhs)
         : pData_(rhs.pData_), size_(rhs.size_)
     {
-        std::pair<byte*, long> ret = rhs.release();
+        auto ret = rhs.release();
         UNUSED(ret);
     }
 
     DataBuf::~DataBuf()
-    { delete[] pData_; }
+    {
+        delete[] pData_;
+    }
 
     DataBuf::DataBuf() : pData_(0), size_(0)
     {}
 
-    DataBuf::DataBuf(long size) : pData_(new byte[size]()), size_(size)
+    DataBuf::DataBuf(size_t size) : pData_(new byte[size]()), size_(size)
     {}
 
-    DataBuf::DataBuf(const byte* pData, long size)
+    DataBuf::DataBuf(const byte* pData, size_t size)
         : pData_(0), size_(0)
     {
         if (size > 0) {
@@ -156,7 +161,7 @@ namespace Exiv2 {
         return *this;
     }
 
-    void DataBuf::alloc(long size)
+    void DataBuf::alloc(size_t size)
     {
         if (size > size_) {
             delete[] pData_;
@@ -167,9 +172,9 @@ namespace Exiv2 {
         }
     }
 
-    EXV_WARN_UNUSED_RESULT std::pair<byte*, long> DataBuf::release()
+    EXV_WARN_UNUSED_RESULT std::pair<byte *, size_t> DataBuf::release()
     {
-        std::pair<byte*, long> p = std::make_pair(pData_, size_);
+        std::pair<byte*, size_t> p = std::make_pair(pData_, size_);
         pData_ = 0;
         size_ = 0;
         return p;
@@ -182,7 +187,7 @@ namespace Exiv2 {
         size_ = 0;
     }
 
-    void DataBuf::reset(std::pair<byte*, long> p)
+    void DataBuf::reset(std::pair<byte *, size_t> p)
     {
         if (pData_ != p.first) {
             delete[] pData_;
@@ -191,14 +196,52 @@ namespace Exiv2 {
         size_ = p.second;
     }
 
-    DataBuf::DataBuf(DataBufRef rhs) : pData_(rhs.p.first), size_(rhs.p.second) {}
+    DataBuf::DataBuf(const DataBufRef &rhs) : pData_(rhs.p.first), size_(rhs.p.second) {}
 
     DataBuf &DataBuf::operator=(DataBufRef rhs) { reset(rhs.p); return *this; }
+
+    byte *DataBuf::begin() noexcept
+    {
+        return pData_;
+    }
+
+    const byte *DataBuf::cbegin() const noexcept
+    {
+        return pData_;
+    }
+
+    byte *DataBuf::end() noexcept
+    {
+        return pData_ + size_;
+    }
+
+    const byte *DataBuf::cend() const noexcept
+    {
+        return pData_ + size_;
+    }
 
     Exiv2::DataBuf::operator DataBufRef() { return DataBufRef(release()); }
 
     // *************************************************************************
     // free functions
+
+    static void checkDataBufBounds(const DataBuf& buf, size_t end) {
+        enforce<std::invalid_argument>(end <= static_cast<size_t>(std::numeric_limits<long>::max()),
+                                       "end of slice too large to be compared with DataBuf bounds.");
+        enforce<std::out_of_range>(end <= buf.size_, "Invalid slice bounds specified");
+    }
+
+    Slice<byte*> makeSlice(DataBuf& buf, size_t begin, size_t end)
+    {
+        checkDataBufBounds(buf, end);
+        return Slice<byte*>(buf.pData_, begin, end);
+    }
+
+    Slice<const byte*> makeSlice(const DataBuf& buf, size_t begin, size_t end)
+    {
+        checkDataBufBounds(buf, end);
+        return Slice<const byte*>(buf.pData_, begin, end);
+    }
 
     std::ostream& operator<<(std::ostream& os, const Rational& r)
     {
@@ -209,18 +252,20 @@ namespace Exiv2 {
     {
         // http://dev.exiv2.org/boards/3/topics/1912?r=1915
         if ( std::tolower(is.peek()) == 'f' ) {
-            char  F;
-            float f;
+            char  F = 0;
+            float f = 0.f;
             is >> F >> f ;
             f  = 2.0f * std::log(f) / std::log(2.0f) ;
             r  = Exiv2::floatToRationalCast(f);
         } else {
-            int32_t nominator;
-            int32_t denominator;
+            int32_t nominator = 0;
+            int32_t denominator = 0;
             char c('\0');
             is >> nominator >> c >> denominator;
-            if (c != '/') is.setstate(std::ios::failbit);
-            if (is) r = std::make_pair(nominator, denominator);
+            if (c != '/')
+                is.setstate(std::ios::failbit);
+            if (is)
+                r = std::make_pair(nominator, denominator);
         }
         return is;
     }
@@ -233,31 +278,29 @@ namespace Exiv2 {
     std::istream& operator>>(std::istream& is, URational& r)
     {
         // http://dev.exiv2.org/boards/3/topics/1912?r=1915
+        /// \todo This implementation seems to be duplicated for the Rational type. Try to remove duplication
         if ( std::tolower(is.peek()) == 'f' ) {
-            char  F;
-            float f;
+            char  F = 0;
+            float f = 0.f;
             is >> F >> f ;
             f  = 2.0f * std::log(f) / std::log(2.0f) ;
             r  = Exiv2::floatToRationalCast(f);
         } else {
-            uint32_t nominator;
-            uint32_t denominator;
+            uint32_t nominator = 0;
+            uint32_t denominator = 0;
             char c('\0');
             is >> nominator >> c >> denominator;
-            if (c != '/') is.setstate(std::ios::failbit);
-            if (is) r = std::make_pair(nominator, denominator);
+            if (c != '/')
+                is.setstate(std::ios::failbit);
+            if (is)
+                r = std::make_pair(nominator, denominator);
         }
         return is;
     }
 
     uint16_t getUShort(const byte* buf, ByteOrder byteOrder)
     {
-        if (byteOrder == littleEndian) {
-            return (byte)buf[1] << 8 | (byte)buf[0];
-        }
-        else {
-            return (byte)buf[0] << 8 | (byte)buf[1];
-        }
+        return getUShort(makeSliceUntil(buf, 2), byteOrder);
     }
 
     uint32_t getULong(const byte* buf, ByteOrder byteOrder)
@@ -329,7 +372,7 @@ namespace Exiv2 {
         // This algorithm assumes that the internal representation of the float
         // type is the 4-byte IEEE 754 binary32 format, which is common but not
         // required by the C++ standard.
-        assert(sizeof(float) == 4);
+        static_assert(sizeof(float) == 4, "float type requires 4-byte IEEE 754 binary32 format");
         union {
             uint32_t ul_;
             float    f_;
@@ -343,7 +386,7 @@ namespace Exiv2 {
         // This algorithm assumes that the internal representation of the double
         // type is the 8-byte IEEE 754 binary64 format, which is common but not
         // required by the C++ standard.
-        assert(sizeof(double) == 8);
+        static_assert(sizeof(double) == 8, "double type requires 8-byte IEEE 754 binary64 format");
         union {
             uint64_t ull_;
             double   d_;
@@ -451,7 +494,7 @@ namespace Exiv2 {
         // This algorithm assumes that the internal representation of the float
         // type is the 4-byte IEEE 754 binary32 format, which is common but not
         // required by the C++ standard.
-        assert(sizeof(float) == 4);
+        static_assert(sizeof(float) == 4, "float type requires 4-byte IEEE 754 binary32 format");
         union {
             uint32_t ul_;
             float    f_;
@@ -465,7 +508,7 @@ namespace Exiv2 {
         // This algorithm assumes that the internal representation of the double
         // type is the 8-byte IEEE 754 binary64 format, which is common but not
         // required by the C++ standard.
-        assert(sizeof(double) == 8);
+        static_assert(sizeof(double) == 8, "double type requires 8-byte IEEE 754 binary64 format");
         union {
             uint64_t ull_;
             double   d_;
@@ -562,32 +605,86 @@ namespace Exiv2 {
 #endif
     }
 
-#ifdef EXV_UNICODE_PATH
     std::string ws2s(const std::wstring& s)
     {
-        int len;
-        int slength = (int)s.length() + 1;
-        len = WideCharToMultiByte(CP_ACP, 0, s.c_str(), slength, 0, 0, 0, 0);
+#if defined(_MSC_VER) || defined(__CYGWIN__) || defined(__MINGW__)
+        const int slength = (int)s.length() + 1;
+        const int len = WideCharToMultiByte(CP_UTF8, 0, s.c_str(), slength, 0, 0, 0, 0);
+
+        // conversion failed => return an empty string
+        if (len == -1) {
+            return std::string("");
+        }
         char* buf = new char[len];
-        WideCharToMultiByte(CP_ACP, 0, s.c_str(), slength, buf, len, 0, 0);
+        WideCharToMultiByte(CP_UTF8, 0, s.c_str(), slength, buf, len, 0, 0);
         std::string r(buf);
         delete[] buf;
         return r;
+#else  // Windows
+        std::mbstate_t state = std::mbstate_t();
+        const wchar_t* wstr = s.c_str();
+        const std::size_t converted_length = std::wcsrtombs(nullptr, &wstr, 0, &state);
+
+        // conversion failed => return an empty string
+        if (converted_length == static_cast<std::size_t>(-1)) {
+            return std::string("");
+        }
+
+        // create a string large enough to store the result + \0
+        std::string result(converted_length + 1, 0);
+
+        const std::size_t actual_conversion_result = std::wcsrtombs(&result[0], &wstr, result.size(), &state);
+
+#ifdef NDEBUG
+        UNUSED(actual_conversion_result);
+#else
+        assert(actual_conversion_result == converted_length);
+#endif
+
+        return result;
+#endif  // Windows
     }
 
     std::wstring s2ws(const std::string& s)
     {
-        int len;
-        int slength = (int)s.length() + 1;
-        len = MultiByteToWideChar(CP_ACP, 0, s.c_str(), slength, 0, 0);
+#if defined(_MSC_VER) || defined(__CYGWIN__) || defined(__MINGW__)
+        const int slength = (int)s.length() + 1;
+        const int len = MultiByteToWideChar(CP_UTF8, 0, s.c_str(), slength, 0, 0);
+
+        // conversion failed => return an empty string
+        if (len == 0) {
+            return std::wstring(L"");
+        }
         wchar_t* buf = new wchar_t[len];
-        MultiByteToWideChar(CP_ACP, 0, s.c_str(), slength, buf, len);
+        MultiByteToWideChar(CP_UTF8, 0, s.c_str(), slength, buf, len);
         std::wstring r(buf);
         delete[] buf;
         return r;
+#else  // Windows
+        std::mbstate_t state = std::mbstate_t();
+        const char* str = s.c_str();
+        const std::size_t converted_length = std::mbsrtowcs(nullptr, &str, 0, &state);
+
+        // conversion failed => return an empty string
+        if (converted_length == static_cast<std::size_t>(-1)) {
+            return std::wstring(L"");
+        }
+
+        // create a string large enough to store the result + L'\0'
+        std::wstring result(converted_length + 1, 0);
+
+        const std::size_t actual_conversion_result = std::mbsrtowcs(&result[0], &str, result.size(), &state);
+
+#ifdef NDEBUG
+        UNUSED(actual_conversion_result);
+#else
+        assert(actual_conversion_result == converted_length);
+#endif
+
+        return result;
+#endif  // Windows
     }
 
-#endif // EXV_UNICODE_PATH
     template<>
     bool stringTo<bool>(const std::string& s, bool& ok)
     {
@@ -702,19 +799,30 @@ namespace Exiv2 {
 }                                       // namespace Exiv2
 
 #ifdef EXV_ENABLE_NLS
+
+namespace
+{
+    bool exvGettextInitialized = false;
+    std::mutex exvGettextInitializedMutex;
+}  // namespace
+
 // Declaration is in i18n.h
 const char* _exvGettext(const char* str)
 {
-    static bool exvGettextInitialized = false;
+    // hold the mutex only as long as necessary
+    {
+        std::lock_guard<std::mutex> lock(exvGettextInitializedMutex);
 
-    if (!exvGettextInitialized) {
-        bindtextdomain(EXV_PACKAGE_NAME, EXV_LOCALEDIR);
-# ifdef EXV_HAVE_BIND_TEXTDOMAIN_CODESET
-        bind_textdomain_codeset (EXV_PACKAGE_NAME, "UTF-8");
-# endif
-        exvGettextInitialized = true;
+        if (!exvGettextInitialized) {
+            // bindtextdomain(EXV_PACKAGE_NAME, EXV_LOCALEDIR);
+            const std::string localeDir = Exiv2::getProcessPath() + EXV_LOCALEDIR;
+            bindtextdomain(EXV_PACKAGE_NAME, localeDir.c_str());
+#ifdef EXV_HAVE_BIND_TEXTDOMAIN_CODESET
+            bind_textdomain_codeset(EXV_PACKAGE_NAME, "UTF-8");
+#endif
+            exvGettextInitialized = true;
+        }
     }
-
     return dgettext(EXV_PACKAGE_NAME, str);
 }
 #endif // EXV_ENABLE_NLS

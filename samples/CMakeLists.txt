@@ -40,7 +40,7 @@ foreach(entry ${SAMPLES})
     set_target_properties(${target} PROPERTIES
       COMPILE_FLAGS ${EXTRA_COMPILE_FLAGS})
     list(APPEND APPLICATIONS ${target})
-    add_test( ${target}_test ${target} )
+
     target_include_directories(${target} PRIVATE ${CMAKE_SOURCE_DIR}/src) # To find unused.h
     install( TARGETS ${target} RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 endforeach()
@@ -55,7 +55,7 @@ add_executable( getopt-test getopt-test.cpp ../src/utils.cpp ../src/getopt.cpp)
 list(APPEND APPLICATIONS getopt-test)
 target_include_directories(getopt-test PRIVATE ${CMAKE_SOURCE_DIR}/src) # To find utils.hpp
 
-add_executable( metacopy metacopy.cpp ../src/utils.cpp ../src/getopt.cpp)
+add_executable( metacopy metacopy.cpp metacopy.hpp ../src/utils.cpp ../src/getopt.cpp)
 list(APPEND APPLICATIONS metacopy)
 target_include_directories(metacopy PRIVATE ${CMAKE_SOURCE_DIR}/src) # To find utils.hpp
 
@@ -69,15 +69,28 @@ list(APPEND APPLICATIONS exiv2json)
 
 install( TARGETS metacopy pathtest exiv2json RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 
+if (MSVC)
+    set_target_properties(exiv2json PROPERTIES LINK_FLAGS "/ignore:4099")
+    set_target_properties(metacopy PROPERTIES LINK_FLAGS "/ignore:4099")
+endif()
+
 if( EXPAT_FOUND )
     add_executable(        geotag    geotag.cpp)
     list(APPEND APPLICATIONS geotag)
-    target_link_libraries( geotag    PRIVATE ${EXPAT_LIBRARIES})
+    target_link_libraries(geotag 
+        PRIVATE
+            exiv2-xmp
+            ${EXPAT_LIBRARIES}
+    )
     target_include_directories(geotag PRIVATE ${EXPAT_INCLUDE_DIR})
     target_include_directories(geotag PRIVATE ${CMAKE_SOURCE_DIR}/src) # To find unused.h
 
     if (WIN32)
         target_compile_definitions(geotag PRIVATE XML_STATIC)
+    endif()
+
+    if (MSVC)
+        set_target_properties(geotag PROPERTIES LINK_FLAGS "/ignore:4099")
     endif()
 
     install( TARGETS       geotag    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
@@ -88,26 +101,35 @@ endif()
 add_executable(conntest conntest.cpp)
 list(APPEND APPLICATIONS conntest)
 
+if (EXIV2_ENABLE_WEBREADY)
+    if( EXIV2_ENABLE_CURL )
+        target_include_directories(conntest SYSTEM PRIVATE ${CURL_INCLUDE_DIR} )
+        target_link_libraries(conntest PRIVATE ${CURL_LIBRARIES})
+        if (USING_CONAN)
+            target_compile_definitions(conntest PRIVATE ${CONAN_COMPILE_DEFINITIONS_LIBCURL})
+            target_link_libraries(conntest PRIVATE ${CONAN_EXE_LINKER_FLAGS_LIBCURL})
+            if (NOT APPLE)
+                target_link_libraries(conntest PRIVATE CONAN_PKG::OpenSSL)
+            endif()
+        endif()
+    endif()
+endif()
+
 # ******************************************************************************
 # remotetest application
 add_executable(remotetest remotetest.cpp)
 list(APPEND APPLICATIONS remotetest)
 
 # ******************************************************************************
-# set compiler -DEXV_HAVE_DLL when linking exiv2 dll
 foreach(application ${APPLICATIONS})
     target_link_libraries(${application} PRIVATE exiv2lib)
-    if ( BUILD_SHARED_LIBS )
-        target_compile_definitions(${application} PRIVATE EXV_HAVE_DLL )
-    endif()
     if( EXIV2_ENABLE_PNG )
-        target_link_libraries( ${application} PRIVATE ${ZLIB_LIBRARIES} )
+        target_link_libraries(${application} PRIVATE ZLIB::ZLIB)
+    endif()
+    if (MSVC)
+        set_target_properties(${application} PROPERTIES LINK_FLAGS "/ignore:4099")
     endif()
 endforeach()
-
-# ******************************************************************************
-# Man page
-install( FILES exiv2samples.1 DESTINATION ${CMAKE_INSTALL_MANDIR}/man1 )
 
 # That's all Folks!
 ##

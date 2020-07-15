@@ -177,3 +177,27 @@ Exif.GPSInfo.GPSTimeStamp                    Rational    3  1/1 2/1 999999999/10
 Exif.GPSInfo.GPSDateStamp                    Ascii      11  2003:12:14
 Iptc.Envelope.CharacterSet                   String      3  %G
 Iptc.Application2.DateCreated                Date        8  2003-12-14
+
+Testcase 16
+===========
+Xmp.MY.DateConfidence                        XmpText     4  Full
+Xmp.exifEX.PhotographicSensitivity           XmpText     2  64
+Xmp.mwg-rs.Regions                           XmpText     0  type="Struct"
+Xmp.mwg-rs.Regions/mwg-rs:AppliedToDimensions XmpText     0  type="Struct"
+Xmp.mwg-rs.Regions/mwg-rs:AppliedToDimensions/stDim:w XmpText     3  540
+Xmp.mwg-rs.Regions/mwg-rs:AppliedToDimensions/stDim:h XmpText     3  960
+Xmp.mwg-rs.Regions/mwg-rs:AppliedToDimensions/stDim:unit XmpText     5  pixel
+Xmp.mwg-rs.Regions/mwg-rs:RegionList         XmpText     0  type="Seq"
+Xmp.mwg-rs.Regions/mwg-rs:RegionList[1]      XmpText     0  type="Struct"
+Xmp.mwg-rs.Regions/mwg-rs:RegionList[1]/mwg-rs:Type XmpText     4  Face
+Xmp.mwg-rs.Regions/mwg-rs:RegionList[1]/mwg-rs:Name XmpText     7  America
+Xmp.mwg-rs.Regions/mwg-rs:RegionList[1]/mwg-rs:Area XmpText     0  type="Struct"
+Xmp.mwg-rs.Regions/mwg-rs:RegionList[1]/mwg-rs:Area/stArea:x XmpText     8  0.825794
+Xmp.mwg-rs.Regions/mwg-rs:RegionList[1]/mwg-rs:Area/stArea:y XmpText     8  0.379665
+Xmp.mwg-rs.Regions/mwg-rs:RegionList[1]/mwg-rs:Area/stArea:w XmpText     8  0.110064
+Xmp.mwg-rs.Regions/mwg-rs:RegionList[1]/mwg-rs:Area/stArea:h XmpText     8  0.077389
+Xmp.mwg-rs.Regions/mwg-rs:RegionList[1]/mwg-rs:Area/stArea:unit XmpText    10  normalized
+Xmp.dc.subject                               XmpBag      1  America
+Xmp.MY.DateConfidence                        XmpText     4  Full
+Xmp.exifEX.PhotographicSensitivity           XmpText     2  64
+Xmp.dc.subject                               XmpBag      1  America

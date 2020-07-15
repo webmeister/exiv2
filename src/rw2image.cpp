@@ -37,7 +37,7 @@
 #include "futils.hpp"
 
 // + standard includes
-#ifdef DEBUG
+#ifdef EXIV2_DEBUG_MESSAGES
 # include <iostream>
 #endif
 
@@ -47,8 +47,8 @@ namespace Exiv2 {
 
     using namespace Internal;
 
-    Rw2Image::Rw2Image(BasicIo::AutoPtr io)
-        : Image(ImageType::rw2, mdExif | mdIptc | mdXmp, io)
+    Rw2Image::Rw2Image(BasicIo::UniquePtr io)
+        : Image(ImageType::rw2, mdExif | mdIptc | mdXmp, std::move(io))
     {
     } // Rw2Image::Rw2Image
 
@@ -112,7 +112,7 @@ namespace Exiv2 {
 
     void Rw2Image::readMetadata()
     {
-#ifdef DEBUG
+#ifdef EXIV2_DEBUG_MESSAGES
         std::cerr << "Reading RW2 file " << io_->path() << "\n";
 #endif
         if (io_->open() != 0) {
@@ -145,7 +145,7 @@ namespace Exiv2 {
         if (list.size() != 1) return;
         ExifData exifData;
         PreviewImage preview = loader.getPreviewImage(*list.begin());
-        Image::AutoPtr image = ImageFactory::open(preview.pData(), preview.size());
+        Image::UniquePtr image = ImageFactory::open(preview.pData(), preview.size());
         if (image.get() == 0) {
 #ifndef SUPPRESS_WARNINGS
             EXV_WARNING << "Failed to open RW2 preview image.\n";
@@ -160,7 +160,7 @@ namespace Exiv2 {
                 if (pos->ifdId() == panaRawId) continue;
                 ExifData::iterator dup = prevData.findKey(ExifKey(pos->key()));
                 if (dup != prevData.end()) {
-#ifdef DEBUG
+#ifdef EXIV2_DEBUG_MESSAGES
                     std::cerr << "Filtering duplicate tag " << pos->key()
                               << " (values '" << pos->value()
                               << "' and '" << dup->value() << "')\n";
@@ -203,7 +203,7 @@ namespace Exiv2 {
         for (unsigned int i = 0; i < EXV_COUNTOF(filteredTags); ++i) {
             ExifData::iterator pos = prevData.findKey(ExifKey(filteredTags[i]));
             if (pos != prevData.end()) {
-#ifdef DEBUG
+#ifdef EXIV2_DEBUG_MESSAGES
                 std::cerr << "Exif tag " << pos->key() << " removed\n";
 #endif
                 prevData.erase(pos);
@@ -244,9 +244,9 @@ namespace Exiv2 {
 
     // *************************************************************************
     // free functions
-    Image::AutoPtr newRw2Instance(BasicIo::AutoPtr io, bool /*create*/)
+    Image::UniquePtr newRw2Instance(BasicIo::UniquePtr io, bool /*create*/)
     {
-        Image::AutoPtr image(new Rw2Image(io));
+        Image::UniquePtr image(new Rw2Image(std::move(io)));
         if (!image->good()) {
             image.reset();
         }

@@ -8,6 +8,11 @@
 #include <iomanip>
 #include <cassert>
 
+// https://github.com/Exiv2/exiv2/issues/468
+#if defined(EXV_UNICODE_PATH) && defined(__MINGW__)
+#undef  EXV_UNICODE_PATH
+#endif
+
 #ifdef  EXV_UNICODE_PATH
 #define _tchar      wchar_t
 #define _tstrcmp    wcscmp
@@ -24,21 +29,48 @@
 
 int _tmain(int argc, _tchar* const argv[])
 try {
+    Exiv2::XmpParser::initialize();
+    ::atexit(Exiv2::XmpParser::terminate);
+
     const _tchar* prog = argv[0];
     const _tchar* file = argv[1];
 
     if (argc != 2) {
-        std::_tcout << _t("Usage: ") << prog << _t(" [ file | --version ]") << std::endl;
+        std::_tcout << _t("Usage: ") << prog << _t(" [ file | --version || --version-test ]") << std::endl;
         return 1;
     }
 
     if ( _tstrcmp(file,_t("--version")) == 0 ) {
-    	exv_grep_keys_t keys;
-    	Exiv2::dumpLibraryInfo(std::cout,keys);
-    	return 0;
+        exv_grep_keys_t keys;
+        Exiv2::dumpLibraryInfo(std::cout,keys);
+        return 0;
+    } else if ( _tstrcmp(file,_t("--version-test")) == 0 ) {
+        // verifies/test macro EXIV2_TEST_VERSION
+        // described in include/exiv2/version.hpp
+        std::cout << "EXV_PACKAGE_VERSION             " << EXV_PACKAGE_VERSION             << std::endl
+                  << "Exiv2::version()                " << Exiv2::version()                << std::endl
+                  << "strlen(Exiv2::version())        " << ::strlen(Exiv2::version())      << std::endl
+                  << "Exiv2::versionNumber()          " << Exiv2::versionNumber()          << std::endl
+                  << "Exiv2::versionString()          " << Exiv2::versionString()          << std::endl
+                  << "Exiv2::versionNumberHexString() " << Exiv2::versionNumberHexString() << std::endl
+                  ;
+
+        // Test the Exiv2 version available at runtime but compile the if-clause only if
+        // the compile-time version is at least 0.15. Earlier versions didn't have a
+        // testVersion() function:
+        #if EXIV2_TEST_VERSION(0,15,0)
+            if (Exiv2::testVersion(0,13,0)) {
+              std::cout << "Available Exiv2 version is equal to or greater than 0.13\n";
+            } else {
+              std::cout << "Installed Exiv2 version is less than 0.13\n";
+            }
+        #else
+              std::cout << "Compile-time Exiv2 version doesn't have Exiv2::testVersion()\n";
+        #endif
+        return 0;
     }
 
-    Exiv2::Image::AutoPtr image = Exiv2::ImageFactory::open(file);
+    Exiv2::Image::UniquePtr image = Exiv2::ImageFactory::open(file);
     assert(image.get() != 0);
     image->readMetadata();
 

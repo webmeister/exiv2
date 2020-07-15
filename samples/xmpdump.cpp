@@ -5,17 +5,22 @@
 #include <cassert>
 #include <iostream>
 #include <string>
+
+#include "error.hpp"
 #include "image.hpp"
 
 int main(int argc, char* const argv[])
 {
+    Exiv2::XmpParser::initialize();
+    ::atexit(Exiv2::XmpParser::terminate);
+
     try {
         if (argc != 2) {
             std::cout << "Usage: " << argv[0] << " file\n";
             return 1;
         }
 
-        Exiv2::Image::AutoPtr image = Exiv2::ImageFactory::open(argv[1]);
+        Exiv2::Image::UniquePtr image = Exiv2::ImageFactory::open(argv[1]);
         assert(image.get() != 0);
         image->readMetadata();
 

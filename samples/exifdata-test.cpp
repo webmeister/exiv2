@@ -24,13 +24,16 @@ void print(const std::string& file);
 int main(int argc, char* const argv[])
 {
 try {
+    Exiv2::XmpParser::initialize();
+    ::atexit(Exiv2::XmpParser::terminate);
+
     if (argc != 2) {
         std::cout << "Usage: " << argv[0] << " file\n";
         return 1;
     }
     std::string file(argv[1]);
 
-    Exiv2::Image::AutoPtr image = Exiv2::ImageFactory::open(file);
+    Exiv2::Image::UniquePtr image = Exiv2::ImageFactory::open(file);
     assert (image.get() != 0);
     image->readMetadata();
 
@@ -103,7 +106,7 @@ catch (Exiv2::AnyError& e) {
 
 void write(const std::string& file, Exiv2::ExifData& ed)
 {
-    Exiv2::Image::AutoPtr image = Exiv2::ImageFactory::open(file);
+    Exiv2::Image::UniquePtr image = Exiv2::ImageFactory::open(file);
     assert (image.get() != 0);
     image->setExifData(ed);
     image->writeMetadata();
@@ -111,7 +114,7 @@ void write(const std::string& file, Exiv2::ExifData& ed)
 
 void print(const std::string& file)
 {
-    Exiv2::Image::AutoPtr image = Exiv2::ImageFactory::open(file);
+    Exiv2::Image::UniquePtr image = Exiv2::ImageFactory::open(file);
     assert (image.get() != 0);
     image->readMetadata();
 

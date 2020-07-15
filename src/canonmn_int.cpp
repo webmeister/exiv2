@@ -406,6 +406,23 @@ namespace Exiv2 {
         {  2, N_("Adobe RGB") }
     };
 
+    extern const TagDetails canonAFAreaMode[] = {
+         {   0, N_("Off (Manual Focus)")           },
+         {   1, N_("AF Point Expansion (surround)")},
+         {   2, N_("Single-point AF")              },
+         {   4, N_("Multi-point AF")               },
+         {   5, N_("Face Detect AF")               },
+         {   6, N_("Face + Tracking")              },
+         {   7, N_("Zone AF")                      },
+         {   8, N_("AF Point Expansion (4 point)") },
+         {   9, N_("Spot AF")                      },
+         {  10, N_("AF Point Expansion (8 point)") },
+         {  11, N_("Flexizone Multi (49 point)")   },
+         {  12, N_("Flexizone Multi (9 point)")    },
+         {  13, N_("Flexizone Single")             },
+         {  14, N_("Large Zone AF")                },
+     };
+
     // Canon MakerNote Tag Info
     const TagInfo CanonMakerNote::tagInfo_[] = {
         TagInfo(0x0000, "0x0000", "0x0000", N_("Unknown"), canonId, makerTags, unsignedShort, -1, printValue),
@@ -442,6 +459,21 @@ namespace Exiv2 {
         TagInfo(0x00c1, "0x00c1", "0x00c1", N_("Unknown"), canonId, makerTags, unsignedShort, -1, printValue),
         TagInfo(0x00d0, "VRDOffset", N_("VRD Offset"), N_("VRD offset"), canonId, makerTags, unsignedLong, -1, printValue),
         TagInfo(0x00e0, "SensorInfo", N_("Sensor Info"), N_("Sensor info"), canonId, makerTags, unsignedShort, -1, printValue),
+        TagInfo(0x2600, "AFInfoSize", N_("AF InfoSize"), N_("AF InfoSize"), canonId, makerTags, signedShort, -1, printValue),
+        TagInfo(0x2601, "AFAreaMode", N_("AF Area Mode"), N_("AF Area Mode"), canonId, makerTags, signedShort, -1, EXV_PRINT_TAG(canonAFAreaMode)),
+        TagInfo(0x2602, "AFNumPoints", N_("AF NumPoints"), N_("AF NumPoints"), canonId, makerTags, signedShort, -1, printValue),
+        TagInfo(0x2603, "AFValidPoints", N_("AF ValidPoints"), N_("AF ValidPoints"), canonId, makerTags, signedShort, -1, printValue),
+        TagInfo(0x2604, "AFCanonImageWidth", N_("AF ImageWidth"), N_("AF ImageWidth"), canonId, makerTags, signedShort, -1, printValue),
+        TagInfo(0x2605, "AFCanonImageHeight", N_("AF ImageHeight"), N_("AF ImageHeight"), canonId, makerTags, signedShort, -1, printValue),
+        TagInfo(0x2606, "AFImageWidth", N_("AF Width"), N_("AF Width"), canonId, makerTags, signedShort, -1, printValue),
+        TagInfo(0x2607, "AFImageHeight", N_("AF Height"), N_("AF Height"), canonId, makerTags, signedShort, -1, printValue),
+        TagInfo(0x2608, "AFAreaWidths", N_("AF Area Widths"), N_("AF Area Widths"), canonId, makerTags, signedShort, -1, printValue),
+        TagInfo(0x2609, "AFAreaHeights", N_("AF Area Heights"), N_("AF Area Heights"), canonId, makerTags, signedShort, -1, printValue),
+        TagInfo(0x260a, "AFXPositions", N_("AF X Positions"), N_("AF X Positions"), canonId, makerTags, signedShort, -1, printValue),
+        TagInfo(0x260b, "AFYPositions", N_("AF Y Positions"), N_("AF Y Positions"), canonId, makerTags, signedShort, -1, printValue),
+        TagInfo(0x260c, "AFPointsInFocus", N_("AF Points in Focus"), N_("AF Points in Focus"), canonId, makerTags, signedShort, -1,printBitmask),
+        TagInfo(0x260d, "AFPointsSelected", N_("AF Points Selected"), N_("AF Points Selected"), canonId, makerTags, signedShort, -1, printBitmask),
+        TagInfo(0x260e, "AFPrimaryPoint", N_("AF Primary Point"), N_("AF Primary Point"), canonId, makerTags, signedShort, -1, printBitmask),
         TagInfo(0x4001, "ColorData", N_("Color Data"), N_("Color data"), canonId, makerTags, unsignedShort, -1, printValue),
         // End of list marker
         TagInfo(0xffff, "(UnknownCanonMakerNoteTag)", "(UnknownCanonMakerNoteTag)", N_("Unknown CanonMakerNote tag"), canonId, makerTags, asciiString, -1, printValue)
@@ -804,6 +836,7 @@ namespace Exiv2 {
         {  53, "Canon EF-S 18-55mm f/3.5-5.6 III"                           },
         {  54, "Canon EF-S 55-250mm f/4-5.6 IS II"                          },
         {  60, "Irix 11mm f/4"                                              },
+        {  82, "Canon TS-E 135mm f/4L Macro"                                },
         {  94, "Canon TS-E 17mm f/4L"                                       },
         {  95, "Canon TS-E 24.0mm f/3.5 L II"                               },
         { 124, "Canon MP-E 65mm f/2.8 1-5x Macro Photo"                     },
@@ -876,7 +909,8 @@ namespace Exiv2 {
         { 153, "Tamron 18-250mm f/3.5-6.3 Di II LD Aspherical [IF] Macro"   }, // 4
         { 154, "Canon EF 20mm f/2.8 USM"                                    }, // 0
         { 154, "Zeiss Milvus 21mm f/2.8"                                    }, // 1
-        { 155, "Canon EF 85mm f/1.8 USM"                                    },
+        { 155, "Canon EF 85mm f/1.8 USM"                                    }, // 0
+        { 155, "Sigma 14mm f/1.8 DG HSM | A"                                }, // 1
         { 156, "Canon EF 28-105mm f/3.5-4.5 USM"                            }, // 0
         { 156, "Tamron SP 70-300mm f/4-5.6 Di VC USD"                       }, // 1
         { 156, "Tamron SP AF 28-105mm f/2.8 LD Aspherical IF"               }, // 2
@@ -933,9 +967,10 @@ namespace Exiv2 {
         { 180, "Canon EF 35mm f/1.4L"                                       }, // 0
         { 180, "Sigma 50mm f/1.4 DG HSM | A"                                }, // 1
         { 180, "Sigma 24mm f/1.4 DG HSM | A"                                }, // 2
-        { 180, "Zeiss Milvus 50mm f/1.4"                                    }, // 3
-        { 180, "Zeiss Milvus 85mm f/1.4"                                    }, // 4
-        { 180, "Zeiss Otus 28mm f/1.4 ZE"                                   }, // 5
+        { 180, "Sigma 20mm f/1.4 DG HSM | A"                                }, // 3
+        { 180, "Zeiss Milvus 50mm f/1.4"                                    }, // 4
+        { 180, "Zeiss Milvus 85mm f/1.4"                                    }, // 5
+        { 180, "Zeiss Otus 28mm f/1.4 ZE"                                   }, // 6
         { 181, "Canon EF 100-400mm f/4.5-5.6L IS + 1.4x"                    }, // 0
         { 181, "Sigma 150-600mm f/5-6.3 DG OS HSM | S + 1.4x"               }, // 1
         { 182, "Canon EF 100-400mm f/4.5-5.6L IS + 2x"                      }, // 0
@@ -958,7 +993,8 @@ namespace Exiv2 {
         { 194, "Canon EF 80-200mm f/4.5-5.6 USM"                            },
         { 195, "Canon EF 35-105mm f/4.5-5.6 USM"                            },
         { 196, "Canon EF 75-300mm f/4-5.6 USM"                              },
-        { 197, "Canon EF 75-300mm f/4-5.6 IS USM"                           },
+        { 197, "Canon EF 75-300mm f/4-5.6 IS USM"                           }, // 0
+        { 197, "Sigma 18-300mm f/3.5-6.3 DC Macro HSM"                      }, // 1
         { 198, "Canon EF 50mm f/1.4 USM"                                    }, // 0
         { 198, "Zeiss Otus 55mm f/1.4 ZE"                                   }, // 1
         { 198, "Zeiss Otus 85mm f/1.4 ZE"                                   }, // 2
@@ -1019,10 +1055,12 @@ namespace Exiv2 {
       //{ 254, "Tamron SP 90mm f/2.8 Di VC USD Macro 1:1 F017"              }, // 2 model released in 2016
         { 255, "Sigma 24-105mm f/4 DG OS HSM | A"                           }, // 0
         { 255, "Sigma 180mm f/2.8 EX DG OS HSM APO Macro"                   }, // 1
+        { 368, "Sigma 18-35mm f/1.8 DC HSM | A"                             },
         { 488, "Canon EF-S 15-85mm f/3.5-5.6 IS USM"                        },
         { 489, "Canon EF 70-300mm f/4-5.6L IS USM"                          },
         { 490, "Canon EF 8-15mm f/4L Fisheye USM"                           },
-        { 491, "Canon EF 300mm f/2.8L IS II USM"                            },
+        { 491, "Canon EF 300mm f/2.8L IS II USM"                            }, // 0
+        { 491, "Tamron SP 24-70mm f/2.8 Di VC USD G2"                       }, // 1
         { 492, "Canon EF 400mm f/2.8L IS II USM"                            },
         { 493, "Canon EF 500mm f/4L IS II USM"                              }, // 0
         { 493, "Canon EF 24-105mm f/4L IS USM"                              }, // 1
@@ -1037,6 +1075,9 @@ namespace Exiv2 {
         { 506, "Canon EF 400mm f/4 DO IS II USM"                            },
         { 507, "Canon EF 16-35mm f/4L IS USM"                               },
         { 508, "Canon EF 11-24mm f/4L USM"                                  },
+        { 624, "Sigma 14mm f/1.8 DG HSM | A"                                }, // 0
+        { 624, "Sigma 150-600mm f/5-6.3 DG OS HSM | C"                      }, // 1
+        { 624, "Sigma 150-600mm f/5-6.3 DG OS HSM | C + 1.4x"               }, // 2
         { 747, "Canon EF 100-400mm f/4.5-5.6L IS II USM"                    }, // 0
         { 747, "Tamron SP 150-600mm F5-6.3 Di VC USD G2"                    }, // 1
         { 748, "Canon EF 100-400mm f/4.5-5.6L IS II USM + 1.4x"             },
@@ -1098,6 +1139,7 @@ namespace Exiv2 {
         { 152, printCsLensByFocalLength },
         { 153, printCsLensByFocalLength },
         { 154, printCsLensByFocalLength }, // not tested
+        { 155, printCsLensByFocalLength },
         { 156, printCsLensByFocalLengthAndMaxAperture },
         { 160, printCsLensByFocalLength },
         { 161, printCsLensByFocalLength },
@@ -1106,6 +1148,7 @@ namespace Exiv2 {
         { 172, printCsLensByFocalLengthTC }, // not tested
         { 173, printCsLensByFocalLengthTC }, // works partly
         { 174, printCsLensByFocalLength }, // not tested
+        { 197, printCsLensByFocalLength },
         { 180, printCsLensByFocalLength },
         { 181, printCsLensByFocalLengthTC }, // not tested
         { 182, printCsLensByFocalLengthTC }, // not tested
@@ -1117,7 +1160,9 @@ namespace Exiv2 {
         { 250, printCsLensByFocalLength }, // not tested
         { 254, printCsLensByFocalLength },
         { 255, printCsLensByFocalLength }, // not tested
+        { 491, printCsLensByFocalLength },
         { 493, printCsLensByFocalLength }, // not tested
+        { 624, printCsLensByFocalLengthTC },
         { 747, printCsLensByFocalLength }, // not tested
         { 4143,printCsLensByFocalLength }, // not tested
         { 4154,printCsLensByFocalLength }, // not tested

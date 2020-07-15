@@ -114,9 +114,8 @@ namespace Exiv2 {
 namespace Exiv2 {
 
     //! @cond IGNORE
-    GroupInfo::GroupName::GroupName(const std::string& groupName)
+    GroupInfo::GroupName::GroupName(const std::string& groupName): g_(groupName)
     {
-        g_ = groupName;
     }
     //! @endcond
 
@@ -176,6 +175,16 @@ namespace Exiv2 {
     {
         IfdId ifdId = Internal::groupId(groupName);
         return Internal::isExifIfd(ifdId);
+    }
+
+    const GroupInfo *ExifTags::groupList()
+    {
+        return Internal::groupList();
+    }
+
+    const TagInfo *ExifTags::tagList(const std::string &groupName)
+    {
+        return Internal::tagList(groupName);
     }
 
     void ExifTags::taglist(std::ostream& os)
@@ -406,9 +415,9 @@ namespace Exiv2 {
         return p_->tag_;
     }
 
-    ExifKey::AutoPtr ExifKey::clone() const
+    ExifKey::UniquePtr ExifKey::clone() const
     {
-        return AutoPtr(clone_());
+        return UniquePtr(clone_());
     }
 
     ExifKey* ExifKey::clone_() const

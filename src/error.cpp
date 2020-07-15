@@ -154,12 +154,10 @@ namespace {
           N_("%1 has invalid XMP value type `%2'") }, // %1=key, %2=value type
         { Exiv2::kerInvalidIccProfile,
           N_("Not a valid ICC Profile") },
-        { Exiv2::kerInvalidXMP,
-          N_("Not valid XMP") },
         { Exiv2::kerTiffDirectoryTooLarge,
           N_("tiff directory length is too large") },
         { Exiv2::kerInvalidTypeValue,
-          N_("invalid type value detected in Image::printIFDStructure") },
+          N_("invalid type in tiff structure") },
         { Exiv2::kerInvalidMalloc,
           N_("invalid memory allocation request") },
         { Exiv2::kerCorruptedMetadata,
@@ -220,11 +218,10 @@ namespace Exiv2 {
 
     }
 
-    AnyError::~AnyError() throw()
+    AnyError::~AnyError() noexcept
     {
     }
 
-    //! @cond IGNORE
     template<>
     void BasicError<char>::setMsg()
     {
@@ -257,7 +254,9 @@ namespace Exiv2 {
         wmsg_ = s2ws(msg);
 #endif
     }
-    //! @endcond
+#ifdef __APPLE__
+    template class EXIV2API BasicError<char>;
+#endif
 
 #ifdef EXV_UNICODE_PATH
     template<>
@@ -291,6 +290,7 @@ namespace Exiv2 {
         wmsg_ = wmsg;
         msg_ = ws2s(wmsg);
     }
+    template class EXIV2API BasicError<wchar_t>;
 #endif
 
     const char* errMsg(int code)

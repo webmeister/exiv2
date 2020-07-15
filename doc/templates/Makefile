@@ -98,7 +98,7 @@ TABLES = Exif \
          OlympusFi \
          OlympusFe1 \
          OlympusRi \
-	 Panasonic \
+         Panasonic \
          PanasonicRaw \
          Pentax \
          Samsung2 \
@@ -110,7 +110,8 @@ TABLES = Exif \
          Sony1Cs2 \
          Sony1MltCs7D \
          Sony1MltCsOld \
-         Sony1MltCsA100
+         Sony1MltCsA100 \
+         Sony2Fp
 
 SCHEMA = xmp_dc \
          xmp_dwc \
@@ -146,7 +147,7 @@ SCHEMA = xmp_dc \
          xmp_mwg-rs \
          xmp_mwg-kw
 
-TAGLIST = ../../bin/taglist
+TAGLIST = ${EXIV2HOME}/build/bin/taglist
 
 # **********************************************************************
 # ======================================================================

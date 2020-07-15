@@ -1,36 +1,39 @@
-cmake_minimum_required( VERSION 3.3.2 )
+cmake_minimum_required( VERSION 3.5.0 )
+
 project(exiv2
-    VERSION 0.27.0.0
+    VERSION 0.27.99.0   # Fake version number to indicate that the next version will be 28.0
     LANGUAGES CXX C
 )
 
 include(cmake/mainSetup.cmake  REQUIRED)
+include(CTest)
+
+include(cmake/gcovr.cmake REQUIRED)
 
 # options and their default values
 option( BUILD_SHARED_LIBS             "Build exiv2lib as a shared library"                    ON  )
 option( EXIV2_ENABLE_XMP              "Build with XMP metadata support"                       ON  )
 option( EXIV2_ENABLE_EXTERNAL_XMP     "Use external version of XMP"                           OFF )
 option( EXIV2_ENABLE_PNG              "Build with png support (requires libz)"                ON  )
-option( EXIV2_ENABLE_NLS              "Build native language support (requires gettext)"      ON  )
+option( EXIV2_ENABLE_NLS              "Build native language support (requires gettext)"      OFF )
 option( EXIV2_ENABLE_PRINTUCS2        "Build with Printucs2"                                  ON  )
 option( EXIV2_ENABLE_LENSDATA         "Build including lens data"                             ON  )
-option( EXIV2_ENABLE_VIDEO            "Build video support into library"                      OFF )
-option( EXIV2_ENABLE_WEBREADY         "Build webready support into library"                   OFF )
-option( EXIV2_ENABLE_DYNAMIC_RUNTIME  "Use dynamic runtime (used for static libs)"            OFF )
+option( EXIV2_ENABLE_DYNAMIC_RUNTIME  "Use dynamic runtime (used for static libs)"            ON )
 option( EXIV2_ENABLE_WIN_UNICODE      "Use Unicode paths (wstring) on Windows"                OFF )
-option( EXIV2_ENABLE_CURL             "USE Libcurl for HttpIo"                                OFF )
-option( EXIV2_ENABLE_SSH              "USE Libssh for SshIo"                                  OFF )
+option( EXIV2_ENABLE_WEBREADY         "Build webready support into library"                   OFF )
+option( EXIV2_ENABLE_CURL             "USE Libcurl for HttpIo (WEBREADY)"                     OFF )
 
 option( EXIV2_BUILD_SAMPLES           "Build sample applications"                             ON  )
-option( EXIV2_BUILD_PO                "Build translations files"                              OFF )
 option( EXIV2_BUILD_EXIV2_COMMAND     "Build exiv2 command-line executable"                   ON  )
 option( EXIV2_BUILD_UNIT_TESTS        "Build unit tests"                                      OFF )
+option( EXIV2_BUILD_FUZZ_TESTS        "Build fuzz tests (libFuzzer)"                          OFF )
 option( EXIV2_BUILD_DOC               "Add 'doc' target to generate documentation"            OFF )
 
 # Only intended to be used by Exiv2 developers/contributors
 option( EXIV2_TEAM_EXTRA_WARNINGS     "Add more sanity checks using compiler flags"           OFF )
 option( EXIV2_TEAM_WARNINGS_AS_ERRORS "Treat warnings as errors"                              OFF )
 option( EXIV2_TEAM_USE_SANITIZERS     "Enable ASAN and UBSAN when available"                  OFF )
+option( EXIV2_TEAM_PACKAGING          "Additional stuff for generating packages"              OFF )
 set(EXTRA_COMPILE_FLAGS " ")
 
 mark_as_advanced(
@@ -44,13 +47,9 @@ mark_as_advanced(
 option( BUILD_WITH_CCACHE             "Use ccache to speed up compilations"                   OFF )
 option( BUILD_WITH_COVERAGE           "Add compiler flags to generate coverage stats"         OFF )
 
-if ( EXIV2_ENABLE_WEBREADY )
-    set ( EXIV2_ENABLE_CURL ON )
-    set ( EXIV2_ENABLE_CURL ON )
-    if ( UNIX )
-        set ( EXIV2_ENABLE_SSH  ON )
-    endif ()
-endif()
+set( PACKAGE_BUGREPORT                "http://github.com/exiv2/exiv2" )
+set( PACKAGE_URL                      "http://exiv2.dyndns.org")
+set( PROJECT_DESCRIPTION              "Exif and IPTC metadata library and tools")
 
 if ( EXIV2_ENABLE_EXTERNAL_XMP )
     set(EXIV2_ENABLE_XMP OFF)
@@ -72,18 +71,25 @@ endif()
 
 include_directories(${CMAKE_BINARY_DIR})  # Make the exv_conf.h file visible for the full project
 
-include(cmake/CMakeChecks.txt)
-
 if( EXIV2_ENABLE_XMP )
     add_subdirectory( xmpsdk )
 endif()
 
 include(cmake/compilerFlagsExiv2.cmake REQUIRED)
 
+add_subdirectory( include )
 add_subdirectory( src )
 
 if( EXIV2_BUILD_UNIT_TESTS )
     add_subdirectory ( unitTests )
+endif()
+
+if( EXIV2_BUILD_FUZZ_TESTS)
+    if ((NOT COMPILER_IS_CLANG) OR (NOT EXIV2_TEAM_USE_SANITIZERS))
+        message(FATAL_ERROR "You need to build with Clang and sanitizers for the fuzzers to work. "
+                "Use Clang and -DEXIV2_TEAM_USE_SANITIZERS=ON")
+    endif()
+    add_subdirectory ( fuzz )
 endif()
 
 if( EXIV2_BUILD_SAMPLES )
@@ -98,12 +104,20 @@ if( EXIV2_BUILD_SAMPLES )
     add_dependencies(tests exiv2lib exiv2 ${SAMPLES})
 endif()
 
-if( EXIV2_BUILD_PO )
+if( EXIV2_ENABLE_NLS )
     add_subdirectory( po )
 endif()
 
-include(cmake/packaging.cmake)
-include(cmake/printSummary.cmake)
+if (EXIV2_TEAM_PACKAGING)
+    include(cmake/packaging.cmake)
+endif()
 
-# That's all Folks!
-##
+configure_file(cmake/exiv2.pc.in exiv2.pc @ONLY)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/exiv2.pc DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig)
+
+# ******************************************************************************
+# Man page
+install( FILES ${PROJECT_SOURCE_DIR}/man/man1/exiv2.1 DESTINATION ${CMAKE_INSTALL_MANDIR}/man1 )
+
+
+include(cmake/printSummary.cmake)

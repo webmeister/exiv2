@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # XMP parser test driver
 
 # ----------------------------------------------------------------------
@@ -203,8 +203,23 @@ fi
     runTest exiv2 -M'set Xmp.xmp.ModifyDate 2015-04-17T18:10:22Z' v.xmp
     TZ=GMT-8 runTest exiv2 -iX v.jpg
     runTest exiv2 -px v.jpg
-    runTest exiv2 -PEkycv v.jpg
+    # evade this test on MSVC builds (Issue #485)
+    platform=$(runTest exiv2 -vV 2>/dev/null | grep platform=)
+    if [ "$platform" == "platform=windows" ]; then
+        runTest exiv2 -PEkycv v.jpg | sed -E -e 's#17 19:10:22#18 02:10:22#g'
+    else
+        runTest exiv2 -PEkycv v.jpg
+    fi
     runTest exiv2 -pi v.jpg
+
+    # 16) https://github.com/Exiv2/exiv2/issues/521
+    echo
+    echo Testcase 16
+    echo ===========
+    copyTestFile                             DSC_3079.jpg
+    runTest exiv2 -px                        DSC_3079.jpg
+    runTest exiv2 -M"del Xmp.mwg-rs.Regions" DSC_3079.jpg
+    runTest exiv2 -px                        DSC_3079.jpg
 
 ) > $results 2>&1
 

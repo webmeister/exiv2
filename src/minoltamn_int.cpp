@@ -2011,25 +2011,21 @@ namespace Exiv2 {
         return ltrim(rtrim(s, t), t);
     }
 
-    //! http://www.sbin.org/doc/HOWTO/C++Programming-HOWTO-7.html
-    static void tokenize(const std::string& str,
-                          std::vector<std::string>& tokens,
-                          const std::string& delimiters = " ")
+    // https://stackoverflow.com/questions/14265581/parse-split-a-string-in-c-using-string-delimiter-standard-c
+    static std::vector<std::string> split(const std::string& str, const std::string& delim)
     {
-        // Skip delimiters at beginning.
-        std::string::size_type lastPos = str.find_first_not_of(delimiters, 0);
-        // Find first "non-delimiter".
-        std::string::size_type pos     = str.find_first_of(delimiters, lastPos);
-
-        while (std::string::npos != pos || std::string::npos != lastPos)
+        std::vector<std::string> tokens;
+        size_t prev = 0, pos = 0;
+        do
         {
-            // Found a token, add it to the vector.
-            tokens.push_back(str.substr(lastPos, pos - lastPos));
-            // Skip delimiters.  Note the "not_of"
-            lastPos = str.find_first_not_of(delimiters, pos);
-            // Find next "non-delimiter"
-            pos = str.find_first_of(delimiters, lastPos);
+            pos = str.find(delim, prev);
+            if (pos == std::string::npos) pos = str.length();
+            std::string token = str.substr(prev, pos-prev);
+            if (!token.empty()) tokens.push_back(token);
+            prev = pos + delim.length();
         }
+        while (pos < str.length() && prev < str.length());
+        return tokens;
     }
 
     static bool inRange(long value,long min,long max)
@@ -2040,8 +2036,7 @@ namespace Exiv2 {
     static std::ostream& resolvedLens(std::ostream& os,long lensID,long index)
     {
         const TagDetails* td = find(minoltaSonyLensID, lensID);
-        std::vector<std::string> tokens;
-        tokenize(td[0].label_,tokens,"|");
+        std::vector<std::string> tokens = split(td[0].label_,"|");
         return os << exvGettext(trim(tokens[index-1]).c_str());
     }
 
@@ -2049,16 +2044,21 @@ namespace Exiv2 {
                                                  const ExifData* metadata)
     {
         try {
-            long lensID = 0x1c;
             long index  = 0;
 
             std::string model   = getKeyString("Exif.Image.Model"    ,metadata);
             std::string lens    = getKeyString("Exif.Photo.LensModel",metadata);
 
-            if ( model == "SLT-A77V" && lens == "100mm F2.8 Macro" ) index=2;
+            if ( model == "SLT-A77V" && lens == "100mm F2.8 Macro" ) {
+                index=2;
+            }
 
-            if ( index > 0 ) return resolvedLens(os,lensID,index);
-        } catch (...) {}
+            if ( index > 0 ) {
+                const long lensID = 0x1c;
+                return resolvedLens(os,lensID,index);
+            }
+        } catch (...) {
+        }
         return EXV_PRINT_TAG(minoltaSonyLensID)(os, value, metadata);
     }
 
@@ -2066,16 +2066,22 @@ namespace Exiv2 {
                                                  const ExifData* metadata)
     {
         try {
-            long lensID = 0x29;
             long index  = 0;
 
             std::string model   = getKeyString("Exif.Image.Model"    ,metadata);
             std::string lens    = getKeyString("Exif.Photo.LensModel",metadata);
 
-            if ( model == "SLT-A77V" && lens == "DT 11-18mm F4.5-5.6" ) index=2;
+            if ( model == "SLT-A77V" && lens == "DT 11-18mm F4.5-5.6" ) {
+                index=2;
+            }
 
-            if ( index > 0 ) return resolvedLens(os,lensID,index);
-        } catch (...) {}
+            if ( index > 0 ) {
+                const long lensID = 0x29;
+                return resolvedLens(os,lensID,index);
+            }
+        } catch (...) {
+
+        }
         return EXV_PRINT_TAG(minoltaSonyLensID)(os, value, metadata);
     }
 
@@ -2083,7 +2089,6 @@ namespace Exiv2 {
                                                  const ExifData* metadata)
     {
         try {
-            long lensID = 0x34;
             long index  = 0;
 
             std::string model       = getKeyString("Exif.Image.Model"            ,metadata);
@@ -2091,11 +2096,19 @@ namespace Exiv2 {
             long        focalLength = getKeyLong  ("Exif.Photo.FocalLength"      ,metadata);
             std::string F2_8        = "760/256" ;
 
-            if ( model == "SLT-A77V" && maxAperture == F2_8           ) index=4;
-            if ( model == "SLT-A77V" && inRange(focalLength,70,300)   ) index=3;
+            if ( model == "SLT-A77V" && maxAperture == F2_8           ) {
+                index=4;
+            }
+            if ( model == "SLT-A77V" && inRange(focalLength,70,300)   ) {
+                index=3;
+            }
 
-            if ( index > 0 ) return resolvedLens(os,lensID,index);
-        } catch (...) {}
+            if ( index > 0 ) {
+                const long lensID = 0x34;
+                return resolvedLens(os,lensID,index);
+            }
+        } catch (...) {
+        }
         return EXV_PRINT_TAG(minoltaSonyLensID)(os, value, metadata);
     }
 
@@ -2103,7 +2116,6 @@ namespace Exiv2 {
                                                  const ExifData* metadata)
     {
         try {
-            long lensID = 0x80;
             long index  = 0;
 
             std::string model       = getKeyString("Exif.Image.Model"    ,metadata);
@@ -2111,9 +2123,14 @@ namespace Exiv2 {
             long        focalLength = getKeyLong  ("Exif.Photo.FocalLength"      ,metadata);
             std::string F4          = "1024/256";
 
-            if ( model == "SLT-A77V" && maxAperture == F4  && inRange(focalLength,18,200) ) index=2;
+            if ( model == "SLT-A77V" && maxAperture == F4  && inRange(focalLength,18,200) ) {
+                index=2;
+            }
 
-            if ( index > 0 ) return resolvedLens(os,lensID,index);
+            if ( index > 0 ) {
+                const long lensID = 0x80;
+                return resolvedLens(os,lensID,index);
+            }
         } catch (...) {}
         return EXV_PRINT_TAG(minoltaSonyLensID)(os, value, metadata);
     }
@@ -2122,7 +2139,6 @@ namespace Exiv2 {
                                                  const ExifData* metadata)
     {
         try {
-            long lensID = 0xff;
             long index  = 0   ;
 
             std::string model       = getKeyString("Exif.Image.Model"            ,metadata);
@@ -2130,10 +2146,16 @@ namespace Exiv2 {
             std::string maxAperture = getKeyString("Exif.Photo.MaxApertureValue" ,metadata);
             std::string F2_8        = "760/256" ;
 
-            if ( model == "SLT-A77V" && maxAperture == F2_8 && inRange(focalLength,17,50) ) index = 1 ;
+            if ( model == "SLT-A77V" && maxAperture == F2_8 && inRange(focalLength,17,50) ) {
+                index = 1 ;
+            }
 
-            if ( index > 0 ) return resolvedLens(os,lensID,index);
-        } catch (...) {}
+            if ( index > 0 ) {
+                const long lensID = 0xff;
+                return resolvedLens(os,lensID,index);
+            }
+        } catch (...) {
+        }
         return EXV_PRINT_TAG(minoltaSonyLensID)(os, value, metadata);
     }
 
@@ -2141,7 +2163,6 @@ namespace Exiv2 {
                                                  const ExifData* metadata)
     {
         try {
-            long lensID = 0xffff;
             long index  = 1   ;
 
             // #1153
@@ -2170,7 +2191,10 @@ namespace Exiv2 {
                 if ( inRange(focalRatio,145,155) ) index = 3 ;
             } catch (...) {}
 
-            if ( index > 0 ) return resolvedLens(os,lensID,index);
+            if ( index > 0 ) {
+                const long lensID = 0xffff;
+                return resolvedLens(os,lensID,index);
+            }
         } catch (...) {}
 
         return EXV_PRINT_TAG(minoltaSonyLensID)(os, value, metadata);

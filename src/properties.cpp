@@ -33,7 +33,6 @@
 #include "metadatum.hpp"
 #include "i18n.h"                // NLS support.
 #include "xmp_exiv2.hpp"
-#include "rwlock.hpp"
 
 #include <iostream>
 #include <iomanip>
@@ -197,6 +196,7 @@ namespace Exiv2 {
         { "LensCorrectionSettings", N_("Lens Correction Settings"),  "Text",     xmpText, xmpExternal, N_("The list of Lens Correction tools settings used to fix lens distortion. This include Batch Queue Manager and Image editor tools based on LensFun library.") },
         { "ColorLabel",             N_("Color Label"),               "Text",     xmpText, xmpExternal, N_("The color label assigned to this item. Possible values are \"0\": no label; \"1\": Red; \"2\": Orange; \"3\": Yellow; \"4\": Green; \"5\": Blue; \"6\": Magenta; \"7\": Gray; \"8\": Black; \"9\": White.") },
         { "PickLabel",              N_("Pick Label"),                "Text",     xmpText, xmpExternal, N_("The pick label assigned to this item. Possible values are \"0\": no label; \"1\": item rejected; \"2\": item in pending validation; \"3\": item accepted.") },
+        { "Preview",                N_("JPEG preview"),              "Text",     xmpText, xmpExternal, N_("Reduced size JPEG preview image encoded as base64 for a fast screen rendering.") },
         // End of list marker
         { 0, 0, 0, invalidTypeId, xmpInternal, 0 }
     };
@@ -2482,11 +2482,11 @@ namespace Exiv2 {
     }
 
     XmpProperties::NsRegistry XmpProperties::nsRegistry_;
-    Exiv2::RWLock XmpProperties::rwLock_;
+    std::mutex XmpProperties::mutex_;
 
     const XmpNsInfo* XmpProperties::lookupNsRegistry(const XmpNsInfo::Prefix& prefix)
     {
-        ScopedReadLock srl(rwLock_);
+        std::lock_guard<std::mutex> scoped_read_lock(mutex_);
         return lookupNsRegistryUnsafe(prefix);
     }
 
@@ -2502,8 +2502,7 @@ namespace Exiv2 {
     void XmpProperties::registerNs(const std::string& ns,
                                    const std::string& prefix)
     {
-        ScopedWriteLock swl(rwLock_);
-
+        std::lock_guard<std::mutex> scoped_write_lock(mutex_);
         std::string ns2 = ns;
         if (   ns2.substr(ns2.size() - 1, 1) != "/"
             && ns2.substr(ns2.size() - 1, 1) != "#") ns2 += "/";
@@ -2535,7 +2534,7 @@ namespace Exiv2 {
 
     void XmpProperties::unregisterNs(const std::string& ns)
     {
-        ScopedWriteLock swl(rwLock_);
+        std::lock_guard<std::mutex> scoped_write_lock(mutex_);
         unregisterNsUnsafe(ns);
     }
 
@@ -2551,8 +2550,7 @@ namespace Exiv2 {
 
     void XmpProperties::unregisterNs()
     {
-        ScopedWriteLock swl(rwLock_);
-
+        std::lock_guard<std::mutex> scoped_write_lock(mutex_);
         NsRegistry::iterator i = nsRegistry_.begin();
         while (i != nsRegistry_.end()) {
             NsRegistry::iterator kill = i++;
@@ -2562,7 +2560,7 @@ namespace Exiv2 {
 
     std::string XmpProperties::prefix(const std::string& ns)
     {
-        ScopedReadLock srl(rwLock_);
+        std::lock_guard<std::mutex> scoped_read_lock(mutex_);
         std::string ns2 = ns;
         if (   ns2.substr(ns2.size() - 1, 1) != "/"
             && ns2.substr(ns2.size() - 1, 1) != "#") ns2 += "/";
@@ -2580,7 +2578,7 @@ namespace Exiv2 {
 
     std::string XmpProperties::ns(const std::string& prefix)
     {
-        ScopedReadLock srl(rwLock_);
+        std::lock_guard<std::mutex> scoped_read_lock(mutex_);
         const XmpNsInfo* xn = lookupNsRegistryUnsafe(XmpNsInfo::Prefix(prefix));
         if (xn != 0) return xn->ns_;
         return nsInfoUnsafe(prefix)->ns_;
@@ -2618,7 +2616,7 @@ namespace Exiv2 {
                 prefix = property.substr(0, i);
                 property = property.substr(i+1);
             }
-#ifdef DEBUG
+#ifdef EXIV2_DEBUG_MESSAGES
             std::cout << "Nested key: " << key.key() << ", prefix: " << prefix
                       << ", property: " << property << "\n";
 #endif
@@ -2647,7 +2645,7 @@ namespace Exiv2 {
 
     const XmpNsInfo* XmpProperties::nsInfo(const std::string& prefix)
     {
-        ScopedReadLock srl(rwLock_);
+        std::lock_guard<std::mutex> scoped_read_lock(mutex_);
         return nsInfoUnsafe(prefix);
     }
 
@@ -2754,9 +2752,9 @@ namespace Exiv2 {
         return *this;
     }
 
-    XmpKey::AutoPtr XmpKey::clone() const
+    XmpKey::UniquePtr XmpKey::clone() const
     {
-        return AutoPtr(clone_());
+        return UniquePtr(clone_());
     }
 
     XmpKey* XmpKey::clone_() const

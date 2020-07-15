@@ -6,7 +6,7 @@
 // included header files
 #include <assert.h>
 #include <errno.h>
-#include <stdlib.h>
+#include <cstdlib>
 #include <string.h>
 #include <stdarg.h>
 #include <stdio.h>
@@ -103,10 +103,15 @@ namespace Util {
         progname_ = Util::basename(argv[0]);
         Util::optind = 0; // reset the Util::Getopt scanner
 
-        for (;;) {
+        for (;!errcnt_;) {
             int c = Util::getopt(argc, argv, optstring.c_str());
-            if (c == -1) break;
+            if (c == -1) {
+                break;
+            }
             errcnt_ += option(c, Util::optarg == 0 ? "" : Util::optarg, Util::optopt);
+            if (c == '?' ) {
+                break;
+            }
         }
         for (int i = Util::optind; i < argc; i++) {
             errcnt_ += nonoption(argv[i]);

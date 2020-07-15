@@ -40,6 +40,7 @@
 #include <cassert>
 #include <cstring>
 #include <ctime>
+#include <cstdarg>
 #include <cstdio>
 #include <cstdlib>
 #include <ctype.h>
@@ -96,77 +97,77 @@ namespace Exiv2 {
         return *this;
     }
 
-    Value::AutoPtr Value::create(TypeId typeId)
+    Value::UniquePtr Value::create(TypeId typeId)
     {
-        AutoPtr value;
+        UniquePtr value;
         switch (typeId) {
         case invalidTypeId:
         case signedByte:
         case unsignedByte:
-            value = AutoPtr(new DataValue(typeId));
+            value = UniquePtr(new DataValue(typeId));
             break;
         case asciiString:
-            value = AutoPtr(new AsciiValue);
+            value = UniquePtr(new AsciiValue);
             break;
         case unsignedShort:
-            value = AutoPtr(new ValueType<uint16_t>);
+            value = UniquePtr(new ValueType<uint16_t>);
             break;
         case unsignedLong:
         case tiffIfd:
-            value = AutoPtr(new ValueType<uint32_t>(typeId));
+            value = UniquePtr(new ValueType<uint32_t>(typeId));
             break;
         case unsignedRational:
-            value = AutoPtr(new ValueType<URational>);
+            value = UniquePtr(new ValueType<URational>);
             break;
         case undefined:
-            value = AutoPtr(new DataValue);
+            value = UniquePtr(new DataValue);
             break;
         case signedShort:
-            value = AutoPtr(new ValueType<int16_t>);
+            value = UniquePtr(new ValueType<int16_t>);
             break;
         case signedLong:
-            value = AutoPtr(new ValueType<int32_t>);
+            value = UniquePtr(new ValueType<int32_t>);
             break;
         case signedRational:
-            value = AutoPtr(new ValueType<Rational>);
+            value = UniquePtr(new ValueType<Rational>);
             break;
         case tiffFloat:
-            value = AutoPtr(new ValueType<float>);
+            value = UniquePtr(new ValueType<float>);
             break;
         case tiffDouble:
-            value = AutoPtr(new ValueType<double>);
+            value = UniquePtr(new ValueType<double>);
             break;
         case string:
-            value = AutoPtr(new StringValue);
+            value = UniquePtr(new StringValue);
             break;
         case date:
-            value = AutoPtr(new DateValue);
+            value = UniquePtr(new DateValue);
             break;
         case time:
-            value = AutoPtr(new TimeValue);
+            value = UniquePtr(new TimeValue);
             break;
         case comment:
-            value = AutoPtr(new CommentValue);
+            value = UniquePtr(new CommentValue);
             break;
         case xmpText:
-            value = AutoPtr(new XmpTextValue);
+            value = UniquePtr(new XmpTextValue);
             break;
         case xmpBag:
         case xmpSeq:
         case xmpAlt:
-            value = AutoPtr(new XmpArrayValue(typeId));
+            value = UniquePtr(new XmpArrayValue(typeId));
             break;
         case langAlt:
-            value = AutoPtr(new LangAltValue);
+            value = UniquePtr(new LangAltValue);
             break;
         default:
-            value = AutoPtr(new DataValue(typeId));
+            value = UniquePtr(new DataValue(typeId));
             break;
         }
         return value;
     } // Value::create
 
-    int Value::setDataArea(const byte* /*buf*/, long /*len*/)
+    int Value::setDataArea(const byte* /*buf*/, size_t /*len*/)
     {
         return -1;
     }
@@ -184,7 +185,7 @@ namespace Exiv2 {
         return toString();
     }
 
-    long Value::sizeDataArea() const
+    size_t Value::sizeDataArea() const
     {
         return 0;
     }
@@ -199,7 +200,7 @@ namespace Exiv2 {
     }
 
     DataValue::DataValue(const byte* buf,
-              long len, ByteOrder byteOrder,TypeId typeId)
+              size_t len, ByteOrder byteOrder, TypeId typeId)
         : Value(typeId)
     {
         read(buf, len, byteOrder);
@@ -214,7 +215,7 @@ namespace Exiv2 {
         return size();
     }
 
-    int DataValue::read(const byte* buf, long len, ByteOrder /*byteOrder*/)
+    int DataValue::read(const byte* buf, size_t len, ByteOrder /*byteOrder*/)
     {
         // byteOrder not needed
         value_.assign(buf, buf + len);
@@ -323,7 +324,7 @@ namespace Exiv2 {
         return 0;
     }
 
-    int StringValueBase::read(const byte* buf, long len, ByteOrder /*byteOrder*/)
+    int StringValueBase::read(const byte* buf, size_t len, ByteOrder /*byteOrder*/)
     {
         // byteOrder not needed
         if (buf) value_ = std::string(reinterpret_cast<const char*>(buf), len);
@@ -516,7 +517,7 @@ namespace Exiv2 {
         return StringValueBase::read(code + c);
     }
 
-    int CommentValue::read(const byte* buf, long len, ByteOrder byteOrder)
+    int CommentValue::read(const byte* buf, size_t len, ByteOrder byteOrder)
     {
         byteOrder_ = byteOrder;
         return StringValueBase::read(buf, len, byteOrder);
@@ -662,7 +663,7 @@ namespace Exiv2 {
     }
 
     int XmpValue::read(const byte* buf,
-                       long len,
+                       size_t len,
                        ByteOrder /*byteOrder*/)
     {
         std::string s(reinterpret_cast<const char*>(buf), len);
@@ -722,9 +723,9 @@ namespace Exiv2 {
         return 0;
     }
 
-    XmpTextValue::AutoPtr XmpTextValue::clone() const
+    XmpTextValue::UniquePtr XmpTextValue::clone() const
     {
-        return AutoPtr(clone_());
+        return UniquePtr(clone_());
     }
 
     long XmpTextValue::size() const
@@ -792,9 +793,9 @@ namespace Exiv2 {
         return 0;
     }
 
-    XmpArrayValue::AutoPtr XmpArrayValue::clone() const
+    XmpArrayValue::UniquePtr XmpArrayValue::clone() const
     {
-        return AutoPtr(clone_());
+        return UniquePtr(clone_());
     }
 
     long XmpArrayValue::count() const
@@ -866,9 +867,9 @@ namespace Exiv2 {
         return 0;
     }
 
-    LangAltValue::AutoPtr LangAltValue::clone() const
+    LangAltValue::UniquePtr LangAltValue::clone() const
     {
-        return AutoPtr(clone_());
+        return UniquePtr(clone_());
     }
 
     long LangAltValue::count() const
@@ -956,7 +957,7 @@ namespace Exiv2 {
     {
     }
 
-    int DateValue::read(const byte* buf, long len, ByteOrder /*byteOrder*/)
+    int DateValue::read(const byte* buf, size_t len, ByteOrder /*byteOrder*/)
     {
         // Hard coded to read Iptc style dates
         if (len != 8) {
@@ -1092,7 +1093,7 @@ namespace Exiv2 {
     {
     }
 
-    int TimeValue::read(const byte* buf, long len, ByteOrder /*byteOrder*/)
+    int TimeValue::read(const byte* buf, size_t len, ByteOrder /*byteOrder*/)
     {
         // Make the buffer a 0 terminated C-string for scanTime[36]
         char b[] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };

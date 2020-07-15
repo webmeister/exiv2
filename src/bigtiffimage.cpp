@@ -1,14 +1,14 @@
-
 #include "bigtiffimage.hpp"
 
-#include <cassert>
-#include <limits>
-
+#include "safe_op.hpp"
 #include "exif.hpp"
 #include "error.hpp"
 #include "image_int.hpp"
 #include "enforce.hpp"
 
+#include <cassert>
+#include <limits>
+#include <iostream>
 
 namespace Exiv2
 {
@@ -102,7 +102,7 @@ namespace Exiv2
             if (magic == 0x2A)
             {
                 byte buffer[4];
-                int read = io.read(buffer, 4);
+                const size_t read = io.read(buffer, 4);
 
                 if (read < 4)
                     throw Exiv2::Error(kerCorruptedMetadata);
@@ -113,7 +113,7 @@ namespace Exiv2
             else
             {
                 byte buffer[8] = {0, 0, 0, 0, 0, 0, 0, 0};
-                int read = io.read(buffer, 2);
+                size_t read = io.read(buffer, 2);
                 if (read < 2)
                     throw Exiv2::Error(kerCorruptedMetadata);
 
@@ -146,13 +146,12 @@ namespace Exiv2
         class BigTiffImage: public Image
         {
             public:
-                BigTiffImage(BasicIo::AutoPtr io):
-                    Image(ImageType::bigtiff, mdExif, io),
-                    header_(),
+                BigTiffImage(BasicIo::UniquePtr io):
+                    Image(ImageType::bigtiff, mdExif, std::move(io)),
+                    header_(readHeader(Image::io())),
                     dataSize_(0),
                     doSwap_(false)
                 {
-                    header_ = readHeader(Image::io());
                     assert(header_.isValid());
 
                     doSwap_ =  (isLittleEndianPlatform() && header_.byteOrder() == bigEndian)
@@ -193,6 +192,19 @@ namespace Exiv2
                 {
                     BasicIo& io = Image::io();
 
+                    // Fix for https://github.com/Exiv2/exiv2/issues/712
+                    // A malicious file can cause a very deep recursion, leading to
+                    // stack exhaustion.
+                    // Note: 200 is an arbitrarily chosen cut-off value. The value
+                    // of depth determines the amount of indentation inserted by the
+                    // pretty-printer. The output starts to become unreadable as
+                    // soon as the indentation exceeds 80 characters or so. That's
+                    // why 200 ought to be a reasonable cut-off.
+                    if (depth > 200) {
+                      out << Internal::indent(depth) << "Maximum indentation depth exceeded." << std::endl;
+                      return;
+                    }
+
                     depth++;
                     bool bFirst  = true;
 
@@ -202,14 +214,14 @@ namespace Exiv2
                     do
                     {
                         // Read top of directory
-                        io.seek(dir_offset, BasicIo::beg);
+                        io.seek(static_cast<int64>(dir_offset), BasicIo::beg);
 
                         const uint64_t entries = readData(header_.format() == Header::StandardTiff? 2: 8);
                         const bool tooBig = entries > 500;
 
                         if ( bFirst && bPrint )
                         {
-                            out << Internal::indent(depth) << Internal::stringFormat("STRUCTURE OF BIGTIFF FILE ") << io.path() << std::endl;
+                            out << Internal::indent(depth) << "STRUCTURE OF BIGTIFF FILE " << io.path() << std::endl;
                             if (tooBig)
                                 out << Internal::indent(depth) << "entries = " << entries << std::endl;
                         }
@@ -280,7 +292,7 @@ namespace Exiv2
                             if ( usePointer )                          // read into buffer
                             {
                                 size_t   restore = io.tell();          // save
-                                io.seek(offset, BasicIo::beg);         // position
+                                io.seek(static_cast<int64>(offset), BasicIo::beg);         // position
                                 io.read(buf.pData_, (long) count * size);     // read
                                 io.seek(restore, BasicIo::beg);        // restore
                             }
@@ -291,14 +303,13 @@ namespace Exiv2
                             {
                                 const uint64_t entrySize = header_.format() == Header::StandardTiff? 12: 20;
                                 const uint64_t address = dir_offset + 2 + i * entrySize;
-                                const std::string offsetString = usePointer?
-                                    Internal::stringFormat("%10u", offset):
-                                    "";
 
                                 out << Internal::indent(depth)
-                                    << Internal::stringFormat("%8u | %#06x %-25s |%10s |%9u |%10s | ",
-                                        address, tag, tagName(tag).c_str(), typeName(type), count, offsetString.c_str());
-
+                                    << Internal::stringFormat("%8u | %#06x %-25s |%10s |%9u |",
+                                        static_cast<size_t>(address), tag, tagName(tag).c_str(), typeName(type), count)
+                                    <<(usePointer ? Internal::stringFormat("%10u | ",(size_t)offset)
+                                                  : Internal::stringFormat("%10s | ",""))
+                                    ;
                                 if ( isShortType(type) )
                                 {
                                     for ( size_t k = 0 ; k < kount ; k++ )
@@ -334,7 +345,7 @@ namespace Exiv2
                                     }
                                 }
                                 else if ( isStringType(type) )
-                                    out << sp << Internal::binaryToString(buf, (size_t) kount);
+                                    out << sp << Internal::binaryToString(makeSlice(buf, 0, static_cast<size_t>(kount)));
 
                                 sp = kount == count ? "" : " ...";
                                 out << sp << std::endl;
@@ -355,13 +366,19 @@ namespace Exiv2
                                 }
                                 else if ( option == kpsRecursive && tag == 0x83bb /* IPTCNAA */ )
                                 {
-                                    const size_t restore = io.tell();      // save
-                                    io.seek(offset, BasicIo::beg);         // position
-                                    byte* bytes=new byte[(size_t)count] ;  // allocate memory
-                                    io.read(bytes,(long)count)        ;    // read
-                                    io.seek(restore, BasicIo::beg);        // restore
-                                    IptcData::printStructure(out,bytes,(size_t)count,depth);
-                                    delete[] bytes;                        // free
+                                    if (Safe::add(count, offset) > io.size()) {
+                                        throw Error(kerCorruptedMetadata);
+                                    }
+
+                                    const size_t restore = io.tell();
+                                    io.seek(static_cast<int64>(offset), BasicIo::beg);  // position
+                                    std::vector<byte> bytes(static_cast<size_t>(count)) ;  // allocate memory
+                                    // TODO: once we have C++11 use bytes.data()
+                                    const size_t read_bytes = io.read(&bytes[0], static_cast<long>(count));
+                                    io.seek(restore, BasicIo::beg);
+                                    // TODO: once we have C++11 use bytes.data()
+                                    IptcData::printStructure(out, makeSliceUntil(&bytes[0], read_bytes), depth);
+
                                 }
                                 else if ( option == kpsRecursive && tag == 0x927c /* MakerNote */ && count > 10)
                                 {
@@ -370,13 +387,13 @@ namespace Exiv2
                                     long jump= 10           ;
                                     byte     bytes[20]          ;
                                     const char* chars = (const char*) &bytes[0] ;
-                                    io.seek(dir_offset, BasicIo::beg);  // position
+                                    io.seek(static_cast<int64>(dir_offset), BasicIo::beg);  // position
                                     io.read(bytes,jump    )     ;  // read
                                     bytes[jump]=0               ;
                                     if ( ::strcmp("Nikon",chars) == 0 )
                                     {
                                       // tag is an embedded tiff
-                                      std::vector<byte> nikon_bytes(count - jump);
+                                      std::vector<byte> nikon_bytes(static_cast<size_t>(count - jump));
 
                                       io.read(&nikon_bytes.at(0), (long)nikon_bytes.size());
                                       MemIo memIo(&nikon_bytes.at(0), (long)count - jump); // create a file
@@ -405,8 +422,6 @@ namespace Exiv2
 
                     if ( bPrint )
                         out << Internal::indent(depth) << "END " << io.path() << std::endl;
-
-                    depth--;
                 }
 
                 uint64_t readData(int size) const
@@ -433,15 +448,15 @@ namespace Exiv2
     }
 
 
-    Image::AutoPtr newBigTiffInstance(BasicIo::AutoPtr io, bool)
+    Image::UniquePtr newBigTiffInstance(BasicIo::UniquePtr io, bool)
     {
-        return Image::AutoPtr(new BigTiffImage(io));
+        return Image::UniquePtr(new BigTiffImage(std::move(io)));
     }
 
 
     bool isBigTiffType(BasicIo& io, bool advance)
     {
-        const long pos = io.tell();
+        const int64 pos = io.tell();
         const Header header = readHeader(io);
         const bool valid = header.isValid();
 

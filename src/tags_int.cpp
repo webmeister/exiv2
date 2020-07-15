@@ -106,7 +106,8 @@ namespace Exiv2 {
         { nikonWtId,       "Makernote", "NikonWt",      Nikon3MakerNote::tagListWt     },
         { nikonIiId,       "Makernote", "NikonIi",      Nikon3MakerNote::tagListIi     },
         { nikonAfId,       "Makernote", "NikonAf",      Nikon3MakerNote::tagListAf     },
-        { nikonAf2Id,      "Makernote", "NikonAf2",     Nikon3MakerNote::tagListAf2    },
+        { nikonAf21Id,     "Makernote", "NikonAf2",     Nikon3MakerNote::tagListAf21   },
+        { nikonAf22Id,     "Makernote", "NikonAf22",    Nikon3MakerNote::tagListAf22   },
         { nikonAFTId,      "Makernote", "NikonAFT",     Nikon3MakerNote::tagListAFT    },
         { nikonFiId,       "Makernote", "NikonFi",      Nikon3MakerNote::tagListFi     },
         { nikonMeId,       "Makernote", "NikonMe",      Nikon3MakerNote::tagListMe     },
@@ -161,9 +162,10 @@ namespace Exiv2 {
         { sony1MltCs7DId,  "Makernote", "Sony1MltCs7D", MinoltaMakerNote::tagListCs7D  },
         { sony1MltCsOldId, "Makernote", "Sony1MltCsOld",MinoltaMakerNote::tagListCsStd },
         { sony1MltCsNewId, "Makernote", "Sony1MltCsNew",MinoltaMakerNote::tagListCsStd },
-        { sony1MltCsA100Id,"Makernote","Sony1MltCsA100",MinoltaMakerNote::tagListCsA100},
+        { sony1MltCsA100Id,"Makernote", "Sony1MltCsA100",MinoltaMakerNote::tagListCsA100},
         { sony2CsId,       "Makernote", "Sony2Cs",      SonyMakerNote::tagListCs       },
         { sony2Cs2Id,      "Makernote", "Sony2Cs2",     SonyMakerNote::tagListCs2      },
+        { sony2FpId,       "Makernote", "Sony2Fp",      SonyMakerNote::tagListFp       },
         { lastId,          "(Last IFD info)", "(Last IFD item)", 0 }
     };
 
@@ -760,11 +762,11 @@ namespace Exiv2 {
                 "separate part of the statement. When there is a clear distinction "
                 "between the photographer and editor copyrights, these are to be "
                 "written in the order of photographer followed by editor copyright, "
-                "separated by NULL (in this case since the statement also ends with "
-                "a NULL, there are two NULL codes). When only the photographer "
-                "copyright is given, it is terminated by one NULL code. When only "
+                "separated by nullptr (in this case since the statement also ends with "
+                "a nullptr, there are two nullptr codes). When only the photographer "
+                "copyright is given, it is terminated by one nullptr code. When only "
                 "the editor copyright is given, the photographer copyright part "
-                "consists of one space followed by a terminating NULL code, then "
+                "consists of one space followed by a terminating nullptr code, then "
                 "the editor copyright is given. When the field is left blank, it is "
                 "treated as unknown."),
                 ifd0Id, otherTags, asciiString, 0, print0x8298),
@@ -1824,7 +1826,7 @@ namespace Exiv2 {
                 "to describe the number of satellites, their ID number, angle of elevation, "
                 "azimuth, SNR and other information in ASCII notation. The format is not "
                 "specified. If the GPS receiver is incapable of taking measurements, value "
-                "of the tag is set to NULL."),
+                "of the tag is set to nullptr."),
                 gpsId, gpsTags, asciiString, 0, printValue),
         TagInfo(0x0009, "GPSStatus", N_("GPS Status"),
                 N_("Indicates the status of the GPS receiver when the image is recorded. "
@@ -1942,7 +1944,7 @@ namespace Exiv2 {
         TagInfo(0xb002, "MPFImageList", N_("MPFImageList"),
                 N_("MPF Image List"),
                 mpfId, mpfTags, asciiString, 0, printValue),
-        TagInfo(0xb003, "MPFImageUIDList", N_("MPFImageUIDList	"),
+        TagInfo(0xb003, "MPFImageUIDList", N_("MPFImageUIDList  "),
                 N_("MPF Image UID List"),
                 mpfId, mpfTags, unsignedLong, 1, printValue),
         TagInfo(0xb004, "MPFTotalFrames", N_("MPFTotalFrames"),
@@ -2006,7 +2008,7 @@ namespace Exiv2 {
         TagInfo(0x0001, "InteroperabilityIndex", N_("Interoperability Index"),
                 N_("Indicates the identification of the Interoperability rule. "
                 "Use \"R98\" for stating ExifR98 Rules. Four bytes used "
-                "including the termination code (NULL). see the separate "
+                "including the termination code (nullptr). see the separate "
                 "volume of Recommended Exif Interoperability Rules (ExifR98) "
                 "for other tags used for ExifR98."),
                 iopId, iopTags, asciiString, 0, printValue),
@@ -2160,6 +2162,32 @@ namespace Exiv2 {
     std::ostream& printValue(std::ostream& os, const Value& value, const ExifData*)
     {
         return os << value;
+    }
+
+    std::ostream& printBitmask(std::ostream& os, const Value& value, const ExifData* metadata)
+    {
+        if (value.typeId() == Exiv2::unsignedShort || value.typeId() == Exiv2::signedShort)
+        {
+            uint16_t bit   = 0;
+            uint16_t comma = 0;
+            for (uint16_t i = 0; i < value.count(); i++ ) { // for each element in value array
+                uint16_t bits = static_cast<uint16_t>(value.toLong(i));
+                for (uint16_t b = 0; b < 16; ++b) { // for every bit
+                    if (bits & (1 << b)) {
+                        if ( comma++ ) {
+                            os << ",";
+                        }
+                        os << bit;
+                    }
+                    bit++ ;
+                }
+            }
+            // if no bits are set, print "(none)"
+            if ( !comma ) os << N_("(none)");
+        } else {
+            printValue(os,value,metadata);
+        }
+        return os;
     }
 
     float fnumber(float apertureValue)
@@ -2429,12 +2457,12 @@ namespace Exiv2 {
     std::ostream& print0x829d(std::ostream& os, const Value& value, const ExifData*)
     {
         std::ios::fmtflags f( os.flags() );
-        Rational fnumber = value.toRational();
-        if (fnumber.second != 0) {
+        Rational rational = value.toRational();
+        if (rational.second != 0) {
             std::ostringstream oss;
             oss.copyfmt(os);
             os << "F" << std::setprecision(2)
-               << static_cast<float>(fnumber.first) / fnumber.second;
+               << static_cast<float>(rational.first) / rational.second;
             os.copyfmt(oss);
         }
         else {
@@ -2870,4 +2898,19 @@ namespace Exiv2 {
 
         return os << stringValue;
     }
+
+    const GroupInfo *groupList()
+    {
+        return groupInfo + 1;
+    }
+
+    const TagInfo* tagList(const std::string& groupName)
+    {
+        const GroupInfo* ii = find(groupInfo, GroupInfo::GroupName(groupName));
+        if (ii == 0 || ii->tagList_ == 0) {
+            return 0;
+        }
+        return ii->tagList_();
+    }
+
 } }

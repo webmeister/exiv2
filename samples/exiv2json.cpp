@@ -31,7 +31,7 @@
 #endif
 const char* realpath(const char* file,char* path)
 {
-    GetFullPathName(file,PATH_MAX,path,NULL);
+    GetFullPathName(file,PATH_MAX,path,nullptr);
     return path;
 }
 #else
@@ -46,7 +46,7 @@ struct Token {
 typedef std::vector<Token>    Tokens;
 
 // "XMP.xmp.MP.RegionInfo/MPRI:Regions[1]/MPReg:Rectangle"
-bool getToken(std::string& in,Token& token,Exiv2::StringSet* pNS=NULL)
+bool getToken(std::string& in,Token& token,Exiv2::StringSet* pNS=nullptr)
 {
     bool result = false;
     bool ns     = false;
@@ -101,7 +101,7 @@ Jzon::Node& recursivelyBuildTree(Jzon::Node& root,Tokens& tokens,size_t k)
 }
 
 // build the json tree for this key.  return location and discover the name
-Jzon::Node& objectForKey(const std::string Key,Jzon::Object& root,std::string& name,Exiv2::StringSet* pNS=NULL)
+Jzon::Node& objectForKey(const std::string& Key,Jzon::Object& root,std::string& name,Exiv2::StringSet* pNS=nullptr)
 {
     // Parse the key
     Tokens      tokens ;
@@ -268,6 +268,9 @@ void fileSystemPush(const char* path,Jzon::Node& nfs)
 
 int main(int argc, char* const argv[])
 {
+    Exiv2::XmpParser::initialize();
+    ::atexit(Exiv2::XmpParser::terminate);
+
     try {
         if (argc < 2 || argc > 3) {
             std::cout << "Usage: " << argv[0] << " [-option] file"       << std::endl;
@@ -279,7 +282,7 @@ int main(int argc, char* const argv[])
         while      (opt[0] == '-') opt++ ; // skip past leading -'s
         char        option = opt[0];
 
-        Exiv2::Image::AutoPtr image = Exiv2::ImageFactory::open(path);
+        Exiv2::Image::UniquePtr image = Exiv2::ImageFactory::open(path);
         assert(image.get() != 0);
         image->readMetadata();
 
@@ -344,11 +347,11 @@ int main(int argc, char* const argv[])
         Jzon::Writer writer(root, Jzon::StandardFormat);
         writer.Write();
         std::cout << writer.GetResult() << std::endl;
-        return 0;
+        return EXIT_SUCCESS;
     }
 
     catch (Exiv2::Error& e) {
         std::cout << "Caught Exiv2 exception '" << e.what() << "'\n";
-        return -1;
+        return EXIT_FAILURE;
     }
 }

@@ -10,6 +10,9 @@
 
 int main(int argc, char* const argv[])
 try {
+    Exiv2::XmpParser::initialize();
+    ::atexit(Exiv2::XmpParser::terminate);
+
     if (argc != 2) {
         std::cout << "Usage: " << argv[0] << " file\n";
         return 1;
@@ -34,7 +37,7 @@ try {
     std::cout << "Time sent: " << iptcData["Iptc.Envelope.TimeSent"] << "\n";
 
     // Open image file
-    Exiv2::Image::AutoPtr image = Exiv2::ImageFactory::open(file);
+    Exiv2::Image::UniquePtr image = Exiv2::ImageFactory::open(file);
     assert (image.get() != 0);
 
     // Set IPTC data and write it to the file

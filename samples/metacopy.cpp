@@ -40,6 +40,9 @@
 int main(int argc, char* const argv[])
 {
 try {
+    Exiv2::XmpParser::initialize();
+    ::atexit(Exiv2::XmpParser::terminate);
+
     // Handle command line arguments
     Params params;
     if (params.getopt(argc, argv)) {
@@ -52,15 +55,15 @@ try {
     }
 
     // Use MemIo to increase test coverage.
-    Exiv2::BasicIo::AutoPtr fileIo(new Exiv2::FileIo(params.read_));
-    Exiv2::BasicIo::AutoPtr memIo(new Exiv2::MemIo);
+    Exiv2::BasicIo::UniquePtr fileIo(new Exiv2::FileIo(params.read_));
+    Exiv2::BasicIo::UniquePtr memIo(new Exiv2::MemIo);
     memIo->transfer(*fileIo);
 
-    Exiv2::Image::AutoPtr readImg = Exiv2::ImageFactory::open(memIo);
+    Exiv2::Image::UniquePtr readImg = Exiv2::ImageFactory::open(std::move(memIo));
     assert(readImg.get() != 0);
     readImg->readMetadata();
 
-    Exiv2::Image::AutoPtr writeImg = Exiv2::ImageFactory::open(params.write_);
+    Exiv2::Image::UniquePtr writeImg = Exiv2::ImageFactory::open(params.write_);
     assert(writeImg.get() != 0);
     if (params.preserve_) writeImg->readMetadata();
     if (params.iptc_) {

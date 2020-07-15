@@ -25,13 +25,13 @@
   @date    15-Jan-04, ahu: created<BR>
            11-Feb-04, ahu: isolated as a component
  */
-#ifndef TAGS_HPP_
-#define TAGS_HPP_
+#pragma once
 
 // *****************************************************************************
+#include "exiv2lib_export.h"
+
 // included header files
 #include "metadatum.hpp"
-#include "types.hpp"
 
 // + standard includes
 #include <string>
@@ -72,8 +72,8 @@ namespace Exiv2 {
     };
 
     //! Search key to find a GroupInfo by its group name.
-    struct GroupInfo::GroupName {
-        GroupName(const std::string& groupName); //!< Constructor
+    struct EXIV2API GroupInfo::GroupName {
+        explicit GroupName(const std::string& groupName);
         std::string g_;                          //!< Group name
     };
 
@@ -104,14 +104,17 @@ namespace Exiv2 {
 
     //! Access to Exif group and tag lists and misc. tag reference methods, implemented as a static class.
     class EXIV2API ExifTags {
-        //! Prevent construction: not implemented.
-        ExifTags();
-        //! Prevent copy-construction: not implemented.
-        ExifTags(const ExifTags& rhs);
-        //! Prevent assignment: not implemented.
-        ExifTags& operator=(const ExifTags& rhs);
-
     public:
+        ExifTags() = delete;
+        ExifTags& operator=(const ExifTags& rhs) = delete;
+        ExifTags& operator=(const ExifTags&& rhs) = delete;
+        ExifTags(const ExifTags& rhs) = delete;
+        ExifTags(const ExifTags&& rhs) = delete;
+
+        //! Return read-only list of built-in groups
+        static const GroupInfo* groupList();
+        //! Return read-only list of built-in \em groupName tags.
+        static const TagInfo* tagList(const std::string& groupName);
         //! Print a list of all standard Exif tags to output stream
         static void taglist(std::ostream& os);
         //! Print the list of tags for \em groupName
@@ -143,7 +146,7 @@ namespace Exiv2 {
     class EXIV2API ExifKey : public Key {
     public:
         //! Shortcut for an %ExifKey auto pointer.
-        typedef std::auto_ptr<ExifKey> AutoPtr;
+        typedef std::unique_ptr<ExifKey> UniquePtr;
 
         //! @name Creators
         //@{
@@ -172,11 +175,12 @@ namespace Exiv2 {
           @throw Error if the key cannot be constructed from the tag number
                  and group name.
          */
-        ExifKey(const TagInfo& ti);
+        explicit ExifKey(const TagInfo& ti);
+
         //! Copy constructor
         ExifKey(const ExifKey& rhs);
         //! Destructor
-        virtual ~ExifKey();
+        ~ExifKey() override;
         //@}
 
         //! @name Manipulators
@@ -191,32 +195,32 @@ namespace Exiv2 {
 
         //! @name Accessors
         //@{
-        virtual std::string key() const;
-        virtual const char* familyName() const;
-        virtual std::string groupName() const;
+        std::string key() const override;
+        const char* familyName() const override;
+        std::string groupName() const override;
         //! Return the IFD id as an integer. (Do not use, this is meant for library internal use.)
         int ifdId() const;
-        virtual std::string tagName() const;
-        virtual uint16_t tag() const;
-        virtual std::string tagLabel() const;
+        std::string tagName() const override;
+        uint16_t tag() const override;
+        std::string tagLabel() const override;
         //! Return the tag description.
         std::string tagDesc() const;        // Todo: should be in the base class
         //! Return the default type id for this tag.
         TypeId defaultTypeId() const;       // Todo: should be in the base class
 
-        AutoPtr clone() const;
+        UniquePtr clone() const;
         //! Return the index (unique id of this key within the original Exif data, 0 if not set)
         int idx() const;
         //@}
 
     private:
         //! Internal virtual copy constructor.
-        virtual ExifKey* clone_() const;
+        ExifKey* clone_() const override;
 
     private:
         // Pimpl idiom
         struct Impl;
-        std::auto_ptr<Impl> p_;
+        std::unique_ptr<Impl> p_;
 
     }; // class ExifKey
 
@@ -227,5 +231,3 @@ namespace Exiv2 {
     EXIV2API std::ostream& operator<<(std::ostream& os, const TagInfo& ti);
 
 }                                       // namespace Exiv2
-
-#endif                                  // #ifndef TAGS_HPP_
